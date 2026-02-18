@@ -24,8 +24,10 @@ Backend/src/main/java/com/madeirart/appMadeirart/
 
 ### 2. **Sempre use DTOs para comunicação externa**
 - Controllers DEVEM receber e retornar DTOs, NUNCA entidades diretas
+- **DTOs DEVEM ser `record`** (imutáveis, concisos, idiomáticos desde Java 14+)
 - Nomeie DTOs com sufixos claros: `OrcamentoRequestDTO`, `OrcamentoResponseDTO`
 - Use `@Valid` para validação automática de DTOs
+- Bean Validation funciona normalmente em records (`@NotNull`, `@Positive`, etc.)
 
 ### 3. **Isolamento de Lógica de Negócio**
 - Lógica de negócio DEVE estar nos Services, NUNCA nos Controllers
@@ -79,13 +81,37 @@ Backend/src/main/java/com/madeirart/appMadeirart/
 public class Orcamento { ... }
 ```
 
-**DTOs:**
+**DTOs (USAR RECORDS):**
 ```java
-@Data
-@NoArgsConstructor
-@AllArgsConstructor
-public class OrcamentoRequestDTO { ... }
+// ✅ CORRETO: DTOs como records (imutáveis, concisos)
+public record OrcamentoRequestDTO(
+    @NotBlank(message = "Cliente é obrigatório")
+    String cliente,
+    
+    @NotNull(message = "Data é obrigatória")
+    LocalDate data,
+    
+    @Valid
+    List<ItemMaterialDTO> itens
+) {}
+
+// Para DTOs de resposta com builder pattern:
+@Builder
+public record OrcamentoResponseDTO(
+    Long id,
+    String cliente,
+    BigDecimal valorTotal,
+    StatusOrcamento status
+) {}
 ```
+
+**Por que records?**
+- ✅ Imutabilidade por padrão (thread-safe)
+- ✅ Código mais conciso (~70% menos linhas)
+- ✅ Intenção clara: é apenas transportador de dados
+- ✅ Getters sem prefixo `get` (`dto.cliente()` ao invés de `dto.getCliente()`)
+- ✅ `equals()`, `hashCode()`, `toString()` gerados automaticamente
+- ✅ Bean Validation funciona normalmente
 
 **Services/Components:**
 ```java
@@ -96,19 +122,25 @@ public class OrcamentoService {
     // NÃO use @Autowired em campos!
 }
 ```
+    private final OrcamentoRepository repository;
+    // NÃO use @Autowired em campos!
+}
+```
 
 ### Regras de Construtores
-- **SEMPRE** use `@NoArgsConstructor` e `@AllArgsConstructor` em entidades
-- Se precisar de construtor customizado, mantenha as anotações acima e adicione o customizado:
+- **SEMPRE** use `@NoArgsConstructor` e `@AllArgsConstructor` em entidades JPA
+- Records geram construtor canônico automaticamente (não precisam de anotações)
+- Se precisar de construtor customizado em entidades, mantenha as anotações acima:
 ```java
 @Entity
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
 public class Orcamento {
-    // Construtor customizado para conversão de DTO
+    // Construtor customizado para conversão de DTO (record)
     public Orcamento(OrcamentoRequestDTO dto) {
-        this.cliente = dto.getCliente();
+        this.cliente = dto.cliente();      // Records usam getters sem "get"
+        this.moveis = dto.moveis();
         // ...
     }
 }
@@ -164,7 +196,8 @@ public class Orcamento {
 6. ❌ Hardcode de valores (use `application.properties`)
 7. ❌ Misturar responsabilidades (ex: Service fazendo parsing de arquivo)
 8. ❌ `@Autowired` em campos (use `@RequiredArgsConstructor` + campos final)
-9. ❌ Entidades/DTOs sem `@NoArgsConstructor` e `@AllArgsConstructor`
+9. ❌ Entidades JPA sem `@NoArgsConstructor` e `@AllArgsConstructor`
+10. ❌ DTOs como classes com Lombok (use `record` ao invés de `@Data`)
 
 ---
 
