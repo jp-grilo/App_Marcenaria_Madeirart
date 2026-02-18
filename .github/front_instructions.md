@@ -6,6 +6,7 @@
 frontend/src/
 ├── assets/           # Imagens, ícones, CSS global
 ├── components/       # Componentes globais reutilizáveis
+├── contexts/         # React Contexts (separados dos Providers)
 ├── hooks/            # Custom hooks globais
 ├── services/         # API (axios instance + serviços por módulo)
 ├── utils/            # formatters.js, validators.js, constants.js
@@ -44,7 +45,20 @@ frontend/src/
   - Global: `src/hooks/`
   - Específico: `src/views/{View}/hooks/`
 
-### 5. **Services Isolados para API**
+### 5. **Fast Refresh: Separe Componentes de Hooks/Utilitários**
+- **REGRA:** Arquivos .jsx devem exportar **APENAS componentes React** para Fast Refresh funcionar
+- **REGRA:** Contexts devem estar em arquivos .js separados (não junto com Providers)
+- ❌ ERRADO: `useSnackbar.jsx` exportando `SnackbarProvider` + `SnackbarContext` + `useSnackbar`
+- ✅ CORRETO (3 arquivos separados):
+  ```
+  src/contexts/SnackbarContext.js    → export const SnackbarContext = createContext()
+  src/components/SnackbarProvider.jsx → export default SnackbarProvider (componente)
+  src/hooks/useSnackbar.jsx           → export const useSnackbar (hook)
+  ```
+- **Mensagem de erro:** "Fast refresh only works when a file only exports components"
+- **Benefício:** Hot Module Replacement (HMR) funciona corretamente durante desenvolvimento
+
+### 6. **Services Isolados para API**
 - TODA comunicação com backend deve estar em `src/services/`
 - Um service por módulo (ex: `orcamentoService.js`, `financeiroService.js`)
 - Componentes NUNCA devem fazer `axios.get()` diretamente
@@ -117,6 +131,7 @@ frontend/src/
 6. ❌ Props drilling excessivo (use Context API quando necessário)
 7. ❌ Misturar formatação com lógica (use utils)
 8. ❌ Estilos inline complexos (use MUI `sx` ou classes CSS)
+9. ❌ **Exportar componentes + hooks/funções no mesmo arquivo .jsx** (quebra Fast Refresh)
 
 ---
 
