@@ -1,0 +1,215 @@
+{
+	"info": {
+		"_postman_id": "madeirart-api-collection",
+		"name": "Madeirart API",
+		"description": "Collection de endpoints da API Madeirart - Sistema de Gestão Financeira para Marcenaria",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Orçamentos",
+			"item": [
+				{
+					"name": "Criar Orçamento",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"cliente\": \"João Silva\",\n  \"moveis\": \"Armário de cozinha planejado com 6 portas, gavetas e acabamento em MDF\",\n  \"data\": \"2026-02-18\",\n  \"previsaoEntrega\": \"2026-03-30\",\n  \"fatorMaoDeObra\": 1.5,\n  \"custosExtras\": 250.00,\n  \"cpc\": 150.00,\n  \"itens\": [\n    {\n      \"quantidade\": 4,\n      \"descricao\": \"Placa MDF 15mm 2,75x1,85m\",\n      \"valorUnitario\": 180.00\n    },\n    {\n      \"quantidade\": 2,\n      \"descricao\": \"Corrediça telescópica 45cm\",\n      \"valorUnitario\": 45.00\n    },\n    {\n      \"quantidade\": 6,\n      \"descricao\": \"Dobradiça de caneco 35mm\",\n      \"valorUnitario\": 12.50\n    },\n    {\n      \"quantidade\": 1,\n      \"descricao\": \"Cola para madeira 500g\",\n      \"valorUnitario\": 35.00\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/orcamentos",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"orcamentos"
+							]
+						},
+						"description": "Cria um novo orçamento com os itens de materiais. O sistema calcula automaticamente:\n- Subtotal de cada item (quantidade × valorUnitario)\n- Subtotal de materiais (soma de todos os itens)\n- Valor de mão de obra (subtotal × fatorMaoDeObra)\n- Valor total (subtotal + mão de obra + custos extras + CPC)"
+					},
+					"response": []
+				},
+				{
+					"name": "Buscar Orçamento por ID",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/orcamentos/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"orcamentos",
+								"1"
+							]
+						},
+						"description": "Retorna os detalhes completos de um orçamento específico, incluindo todos os itens e cálculos."
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Todos os Orçamentos",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/orcamentos",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"orcamentos"
+							]
+						},
+						"description": "Lista todos os orçamentos do sistema."
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Orçamentos por Status - AGUARDANDO",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/orcamentos?status=AGUARDANDO",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"orcamentos"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "AGUARDANDO",
+									"description": "Valores possíveis: AGUARDANDO, INICIADA, FINALIZADA, CANCELADA"
+								}
+							]
+						},
+						"description": "Filtra orçamentos pelo status. Status disponíveis: AGUARDANDO, INICIADA, FINALIZADA, CANCELADA"
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Orçamentos por Status - INICIADA",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/orcamentos?status=INICIADA",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"orcamentos"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "INICIADA"
+								}
+							]
+						},
+						"description": "Lista orçamentos com status INICIADA (em produção)."
+					},
+					"response": []
+				},
+				{
+					"name": "Listar Orçamentos por Status - FINALIZADA",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/orcamentos?status=FINALIZADA",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"orcamentos"
+							],
+							"query": [
+								{
+									"key": "status",
+									"value": "FINALIZADA"
+								}
+							]
+						},
+						"description": "Lista orçamentos finalizados."
+					},
+					"response": []
+				},
+				{
+					"name": "Atualizar Orçamento",
+					"request": {
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"cliente\": \"João Silva Atualizado\",\n  \"moveis\": \"Armário de cozinha planejado com 8 portas, gavetas e acabamento em MDF\",\n  \"data\": \"2026-02-18\",\n  \"previsaoEntrega\": \"2026-04-15\",\n  \"fatorMaoDeObra\": 1.8,\n  \"custosExtras\": 300.00,\n  \"cpc\": 180.00,\n  \"itens\": [\n    {\n      \"quantidade\": 6,\n      \"descricao\": \"Placa MDF 15mm 2,75x1,85m\",\n      \"valorUnitario\": 180.00\n    },\n    {\n      \"quantidade\": 3,\n      \"descricao\": \"Corrediça telescópica 45cm\",\n      \"valorUnitario\": 45.00\n    },\n    {\n      \"quantidade\": 8,\n      \"descricao\": \"Dobradiça de caneco 35mm\",\n      \"valorUnitario\": 12.50\n    },\n    {\n      \"quantidade\": 2,\n      \"descricao\": \"Cola para madeira 500g\",\n      \"valorUnitario\": 35.00\n    },\n    {\n      \"quantidade\": 1,\n      \"descricao\": \"Kit de puxadores cromados\",\n      \"valorUnitario\": 120.00\n    }\n  ]\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/orcamentos/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"orcamentos",
+								"1"
+							]
+						},
+						"description": "Atualiza um orçamento existente. Substitui todos os dados, incluindo os itens."
+					},
+					"response": []
+				},
+				{
+					"name": "Deletar Orçamento",
+					"request": {
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/orcamentos/1",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"orcamentos",
+								"1"
+							]
+						},
+						"description": "Remove um orçamento do sistema. Esta ação é irreversível."
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints para gerenciamento de orçamentos (US01)"
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:8080",
+			"type": "string"
+		}
+	]
+}
