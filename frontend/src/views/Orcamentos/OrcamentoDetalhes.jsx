@@ -27,6 +27,7 @@ import { formatCurrency, formatDate } from "../../utils/formatters";
 import { STATUS_LABELS, STATUS_CORES } from "../../utils/constants";
 import IniciarProducaoDialog from "./IniciarProducaoDialog";
 import ParcelasList from "./ParcelasList";
+import StatusRecebimentoCard from "../../components/StatusRecebimentoCard";
 
 export default function OrcamentoDetalhes() {
   const navigate = useNavigate();
@@ -106,6 +107,9 @@ export default function OrcamentoDetalhes() {
       setParcelas((prev) =>
         prev.map((p) => (p.id === parcelaId ? parcelaAtualizada : p)),
       );
+
+      const orcamentoAtualizado = await orcamentoService.buscarPorId(id);
+      setOrcamento(orcamentoAtualizado);
 
       showSuccess("Pagamento confirmado com sucesso!");
     } catch (err) {
@@ -534,19 +538,29 @@ export default function OrcamentoDetalhes() {
       )}
 
       {tabAtiva === 2 && (
-        <Paper sx={{ p: 3 }}>
-          {loadingParcelas ? (
-            <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
-              <CircularProgress />
-            </Box>
-          ) : (
-            <ParcelasList
-              parcelas={parcelas}
-              onConfirmar={handleConfirmarPagamento}
-              loading={loadingParcelas}
+        <Box>
+          {/* Widget de Status de Recebimento */}
+          {orcamento.statusRecebimento && (
+            <StatusRecebimentoCard
+              statusRecebimento={orcamento.statusRecebimento}
             />
           )}
-        </Paper>
+
+          {/* Lista de Parcelas */}
+          <Paper sx={{ p: 3 }}>
+            {loadingParcelas ? (
+              <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+                <CircularProgress />
+              </Box>
+            ) : (
+              <ParcelasList
+                parcelas={parcelas}
+                onConfirmar={handleConfirmarPagamento}
+                loading={loadingParcelas}
+              />
+            )}
+          </Paper>
+        </Box>
       )}
 
       <IniciarProducaoDialog
