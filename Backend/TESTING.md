@@ -8,7 +8,9 @@
 | --------------- | ------------------------- | ------------- | ----------------- |
 | **Unit**        | `OrcamentoServiceTest`    | 17            | Service com mocks |
 | **Integration** | `OrcamentoControllerTest` | 16            | Endpoints REST    |
-| **TOTAL**       | **2 arquivos**            | **33 testes** |                   |
+| **Unit**        | `ParcelaServiceTest`      | 7             | Service com mocks |
+| **Integration** | `ParcelaControllerTest`   | 9             | Endpoints REST    |
+| **TOTAL**       | **4 arquivos**            | **49 testes** |                   |
 
 ## Como Executar
 
@@ -150,6 +152,52 @@ void deveCriarOrcamento() throws Exception {
 
 ---
 
+### **Testes de Confirmação de Pagamentos - US04** (Novos)
+
+**Adicionados:** 16 testes (7 Service + 9 Controller)
+
+**Cobertura:**
+
+**Service (ParcelaServiceTest):**
+
+- Listar parcelas por orçamento (ordenadas por número)
+- Buscar parcela por ID com sucesso
+- Lançar exceção ao buscar parcela inexistente
+- Confirmar pagamento com sucesso (atualiza status e data)
+- Lançar exceção ao confirmar parcela já paga
+- Lançar exceção ao confirmar parcela inexistente
+- Retornar lista vazia quando orçamento não tem parcelas
+
+**Controller (ParcelaControllerTest):**
+
+- `GET /api/parcelas/orcamento/{id}` - Lista parcelas de um orçamento
+- `GET /api/parcelas/orcamento/{id}` - Retorna lista vazia quando não há parcelas
+- `GET /api/parcelas/{id}` - Busca parcela por ID (200)
+- `GET /api/parcelas/{id}` - Retorna 404 quando parcela não existe
+- `PATCH /api/parcelas/{id}/confirmar` - Confirma pagamento (200)
+- `PATCH /api/parcelas/{id}/confirmar` - Retorna 404 quando parcela não existe
+- `PATCH /api/parcelas/{id}/confirmar` - Retorna 400 quando parcela já está paga
+
+**Exemplo:**
+
+```java
+@Test
+@DisplayName("Deve confirmar pagamento de parcela com sucesso")
+void deveConfirmarPagamento() {
+    when(parcelaRepository.findById(1L)).thenReturn(Optional.of(parcela));
+    when(parcelaRepository.save(any(Parcela.class))).thenReturn(parcela);
+
+    ParcelaResponseDTO resultado = parcelaService.confirmarPagamento(1L);
+
+    assertThat(resultado).isNotNull();
+    assertThat(resultado.status()).isEqualTo(StatusParcela.PAGO);
+    assertThat(resultado.dataPagamento()).isEqualTo(LocalDate.now());
+    verify(parcelaRepository).save(parcela);
+}
+```
+
+---
+
 ## Padrões e Boas Práticas Aplicadas
 
 ### Nomenclatura Clara
@@ -179,7 +227,7 @@ assertThat(response.id()).isEqualTo(1L);
 ### Mocks Apropriados
 
 - Service: usa `@Mock` do repository
-- Controller: usa `@MockBean` do service
+- Controller: usa `@MockitoBean` do service
 
 ### Isolamento de Testes
 
@@ -199,9 +247,9 @@ assertThat(response.id()).isEqualTo(1L);
 
 ### Performance
 
-- Testes unitários (Service): < 4s
-- Testes de integração (Controller): < 8s
-- **Total (33 testes): < 12s**
+- Testes unitários (Service): < 6s
+- Testes de integração (Controller): < 10s
+- **Total (49 testes): < 16s**
 
 ---
 
@@ -247,7 +295,7 @@ Todas incluídas via `spring-boot-starter-test`:
 
 ---
 
-## Por que Apenas 23 Testes?
+## Por que Apenas 49 Testes?
 
 ### Pragmatismo > Cobertura Cega
 
@@ -258,14 +306,20 @@ Todas incluídas via `spring-boot-starter-test`:
 - **Validações** - Bean Validation é framework maduro
 - **Getters/Setters** - Lombok/Records geram código confiável
 
-**Testamos:** -**Service** - Nossa lógica de negócio (conversões, regras, auditoria) -**Controller** - Contrato de API (HTTP status, JSON, validações) -**US02** - Funcionalidades de auditoria (histórico de alterações)
+**Testamos:**
+
+- **Service** - Nossa lógica de negócio (conversões, regras, auditoria, confirmação de pagamentos)
+- **Controller** - Contrato de API (HTTP status, JSON, validações)
+- **US02** - Funcionalidades de auditoria (histórico de alterações)
+- **US03** - Iniciação de produção e plano de parcelamento
+- **US04** - Confirmação manual de pagamentos
 
 ### Resultado
 
--Manutenção mais fácil (menos código de teste para atualizar)
--Build mais rápido (< 9s vs > 30s com testes excessivos)
--Foco em cenários reais de falha
--Menos duplicação (não testamos o que o framework já testa)
+- Manutenção mais fácil (menos código de teste para atualizar)
+- Build mais rápido (< 16s vs > 40s com testes excessivos)
+- Foco em cenários reais de falha
+- Menos duplicação (não testamos o que o framework já testa)
 
 ---
 
