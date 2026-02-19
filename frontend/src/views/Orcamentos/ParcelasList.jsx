@@ -139,7 +139,7 @@ export default function ParcelasList({
               </Box>
 
               {/* Botão de confirmação */}
-              {parcela.status === "PENDENTE" && (
+              {(parcela.status === "PENDENTE" || parcela.status === "ATRASADO") && (
                 <Button
                   variant="outlined"
                   color="inherit"
