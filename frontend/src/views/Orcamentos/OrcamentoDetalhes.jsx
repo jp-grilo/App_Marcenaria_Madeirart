@@ -22,9 +22,11 @@ import { ArrowBack, Edit, PlayArrow } from "@mui/icons-material";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSnackbar } from "../../hooks/useSnackbar";
 import orcamentoService from "../../services/orcamentoService";
+import parcelaService from "../../services/parcelaService";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import { STATUS_LABELS, STATUS_CORES } from "../../utils/constants";
 import IniciarProducaoDialog from "./IniciarProducaoDialog";
+import ParcelasList from "./ParcelasList";
 
 export default function OrcamentoDetalhes() {
   const navigate = useNavigate();
@@ -33,8 +35,10 @@ export default function OrcamentoDetalhes() {
   const [loading, setLoading] = useState(true);
   const [orcamento, setOrcamento] = useState(null);
   const [historico, setHistorico] = useState([]);
+  const [parcelas, setParcelas] = useState([]);
   const [tabAtiva, setTabAtiva] = useState(0);
   const [loadingHistorico, setLoadingHistorico] = useState(false);
+  const [loadingParcelas, setLoadingParcelas] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -74,6 +78,67 @@ export default function OrcamentoDetalhes() {
     setTabAtiva(newValue);
     if (newValue === 1) {
       carregarHistorico();
+    } else if (newValue === 2) {
+      carregarParcelas();
+    }
+  };
+
+  const carregarParcelas = async () => {
+    if (parcelas.length > 0) return;
+
+    try {
+      setLoadingParcelas(true);
+      const dados = await parcelaService.listarPorOrcamento(id);
+      setParcelas(dados);
+    } catch (err) {
+      showError("Erro ao carregar parcelas");
+      console.error(err);
+    } finally {
+      setLoadingParcelas(false);
+    }
+  };
+
+  const handleConfirmarPagamento = async (parcelaId) => {
+    try {
+      const parcelaAtualizada =
+        await parcelaService.confirmarPagamento(parcelaId);
+
+      setParcelas((prev) =>
+        prev.map((p) => (p.id === parcelaId ? parcelaAtualizada : p)),
+      );
+
+      showSuccess("Pagamento confirmado com sucesso!");
+    } catch (err) {
+      console.error("Erro ao confirmar pagamento:", err);
+
+      let mensagem = "Erro ao confirmar pagamento";
+
+      if (err.response) {
+        const { status, data } = err.response;
+
+        if (status === 500) {
+          mensagem =
+            "Erro interno no servidor. Verifique os dados e tente novamente.";
+        } else if (status === 400) {
+          mensagem =
+            typeof data === "string"
+              ? data
+              : data?.message || "Parcela já confirmada ou dados inválidos";
+        } else if (status === 404) {
+          mensagem = "Parcela não encontrada";
+        } else if (data) {
+          mensagem =
+            typeof data === "string"
+              ? data
+              : data?.message || data?.error || mensagem;
+        }
+      } else if (err.request) {
+        mensagem = "Servidor não respondeu. Verifique sua conexão.";
+      } else {
+        mensagem = err.message || mensagem;
+      }
+
+      showError(mensagem);
     }
   };
 
@@ -86,6 +151,10 @@ export default function OrcamentoDetalhes() {
       setOrcamento(orcamentoAtualizado);
       setDialogOpen(false);
       showSuccess("Produção iniciada com sucesso!");
+
+      setParcelas([]);
+      const parcelasAtualizadas = await parcelaService.listarPorOrcamento(id);
+      setParcelas(parcelasAtualizadas);
     } catch (err) {
       console.error("Erro ao iniciar produção:", err);
 
@@ -185,6 +254,7 @@ export default function OrcamentoDetalhes() {
       <Tabs value={tabAtiva} onChange={handleTabChange} sx={{ mb: 3 }}>
         <Tab label="Informações" />
         <Tab label="Histórico" />
+        {orcamento.status !== "AGUARDANDO" && <Tab label="Parcelas" />}
       </Tabs>
 
       {tabAtiva === 0 && (
@@ -459,6 +529,22 @@ export default function OrcamentoDetalhes() {
                 );
               })}
             </Box>
+          )}
+        </Paper>
+      )}
+
+      {tabAtiva === 2 && (
+        <Paper sx={{ p: 3 }}>
+          {loadingParcelas ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+              <CircularProgress />
+            </Box>
+          ) : (
+            <ParcelasList
+              parcelas={parcelas}
+              onConfirmar={handleConfirmarPagamento}
+              loading={loadingParcelas}
+            />
           )}
         </Paper>
       )}
