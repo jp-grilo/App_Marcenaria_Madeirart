@@ -8,7 +8,9 @@
 | --------------- | ------------------------- | ------------- | ----------------- |
 | **Unit**        | `OrcamentoServiceTest`    | 17            | Service com mocks |
 | **Integration** | `OrcamentoControllerTest` | 16            | Endpoints REST    |
-| **TOTAL**       | **2 arquivos**            | **33 testes** |                   |
+| **Unit**        | `ParcelaServiceTest`      | 10            | Service com mocks |
+| **Integration** | `ParcelaControllerTest`   | 9             | Endpoints REST    |
+| **TOTAL**       | **4 arquivos**            | **52 testes** |                   |
 
 ## Como Executar
 
@@ -150,6 +152,100 @@ void deveCriarOrcamento() throws Exception {
 
 ---
 
+### **Testes de Confirmação de Pagamentos - US04**
+
+**Adicionados:** 19 testes (10 Service + 9 Controller)
+
+**Cobertura:**
+
+**Service (ParcelaServiceTest):**
+
+- Listar parcelas por orçamento (ordenadas por número)
+- Buscar parcela por ID com sucesso
+- Lançar exceção ao buscar parcela inexistente
+- Confirmar pagamento com sucesso (atualiza status e data)
+- Lançar exceção ao confirmar parcela já paga
+- Lançar exceção ao confirmar parcela inexistente
+- Retornar lista vazia quando orçamento não tem parcelas
+- **Atualizar parcelas pendentes com vencimento vencido para ATRASADO**
+- **Retornar zero quando não há parcelas atrasadas**
+- **Não atualizar parcelas pendentes com vencimento futuro**
+
+**Controller (ParcelaControllerTest):**
+
+- `GET /api/parcelas/orcamento/{id}` - Lista parcelas de um orçamento
+- `GET /api/parcelas/orcamento/{id}` - Retorna lista vazia quando não há parcelas
+- `GET /api/parcelas/{id}` - Busca parcela por ID (200)
+- `GET /api/parcelas/{id}` - Retorna 404 quando parcela não existe
+- `PATCH /api/parcelas/{id}/confirmar` - Confirma pagamento (200)
+- `PATCH /api/parcelas/{id}/confirmar` - Retorna 404 quando parcela não existe
+- `PATCH /api/parcelas/{id}/confirmar` - Retorna 400 quando parcela já está paga
+
+**Exemplo:**
+
+```java
+@Test
+@DisplayName("Deve confirmar pagamento de parcela com sucesso")
+void deveConfirmarPagamento() {
+    when(parcelaRepository.findById(1L)).thenReturn(Optional.of(parcela));
+    when(parcelaRepository.save(any(Parcela.class))).thenReturn(parcela);
+
+    ParcelaResponseDTO resultado = parcelaService.confirmarPagamento(1L);
+
+    assertThat(resultado).isNotNull();
+    assertThat(resultado.status()).isEqualTo(StatusParcela.PAGO);
+    assertThat(resultado.dataPagamento()).isEqualTo(LocalDate.now());
+    verify(parcelaRepository).save(parcela);
+}
+```
+
+**Exemplo de teste de atualização automática:**
+
+```java
+@Test
+@DisplayName("Deve atualizar parcelas pendentes com vencimento vencido para ATRASADO")
+void deveAtualizarParcelasAtrasadas() {
+    Parcela parcela1 = Parcela.builder()
+            .dataVencimento(LocalDate.now().minusDays(5))
+            .status(StatusParcela.PENDENTE)
+            .build();
+
+    when(parcelaRepository.findByStatusAndDataVencimentoBefore(
+            eq(StatusParcela.PENDENTE), any(LocalDate.class)))
+            .thenReturn(List.of(parcela1));
+
+    int quantidade = parcelaService.atualizarParcelasAtrasadas();
+
+    assertThat(quantidade).isEqualTo(1);
+    assertThat(parcela1.getStatus()).isEqualTo(StatusParcela.ATRASADO);
+    verify(parcelaRepository).saveAll(any());
+}
+```
+
+---
+
+### **Rotina de Inicialização**
+
+**Componente:** `ParcelaStartupTask`
+
+**Funcionalidade:**
+
+- Executa automaticamente ao iniciar a aplicação (`@PostConstruct`)
+- Verifica todas as parcelas pendentes (`PENDENTE`)
+- Atualiza status para `ATRASADO` quando `dataVencimento < hoje`
+- Registra logs de execução e quantidade de parcelas atualizadas
+- Tratamento de exceções para não impedir a inicialização da aplicação
+
+**Exemplo de log:**
+
+```
+Iniciando verificação de parcelas atrasadas...
+Total de 3 parcela(s) atualizada(s) para status ATRASADO
+Verificação de parcelas atrasadas concluída. Total de parcelas atualizadas: 3
+```
+
+---
+
 ## Padrões e Boas Práticas Aplicadas
 
 ### Nomenclatura Clara
@@ -179,7 +275,7 @@ assertThat(response.id()).isEqualTo(1L);
 ### Mocks Apropriados
 
 - Service: usa `@Mock` do repository
-- Controller: usa `@MockBean` do service
+- Controller: usa `@MockitoBean` do service
 
 ### Isolamento de Testes
 
@@ -199,9 +295,9 @@ assertThat(response.id()).isEqualTo(1L);
 
 ### Performance
 
-- Testes unitários (Service): < 4s
-- Testes de integração (Controller): < 8s
-- **Total (33 testes): < 12s**
+- Testes unitários (Service): < 6s
+- Testes de integração (Controller): < 10s
+- **Total (49 testes): < 16s**
 
 ---
 
@@ -247,7 +343,7 @@ Todas incluídas via `spring-boot-starter-test`:
 
 ---
 
-## Por que Apenas 23 Testes?
+## Por que Apenas 49 Testes?
 
 ### Pragmatismo > Cobertura Cega
 
@@ -258,14 +354,20 @@ Todas incluídas via `spring-boot-starter-test`:
 - **Validações** - Bean Validation é framework maduro
 - **Getters/Setters** - Lombok/Records geram código confiável
 
-**Testamos:** -**Service** - Nossa lógica de negócio (conversões, regras, auditoria) -**Controller** - Contrato de API (HTTP status, JSON, validações) -**US02** - Funcionalidades de auditoria (histórico de alterações)
+**Testamos:**
+
+- **Service** - Nossa lógica de negócio (conversões, regras, auditoria, confirmação de pagamentos)
+- **Controller** - Contrato de API (HTTP status, JSON, validações)
+- **US02** - Funcionalidades de auditoria (histórico de alterações)
+- **US03** - Iniciação de produção e plano de parcelamento
+- **US04** - Confirmação manual de pagamentos
 
 ### Resultado
 
--Manutenção mais fácil (menos código de teste para atualizar)
--Build mais rápido (< 9s vs > 30s com testes excessivos)
--Foco em cenários reais de falha
--Menos duplicação (não testamos o que o framework já testa)
+- Manutenção mais fácil (menos código de teste para atualizar)
+- Build mais rápido (< 16s vs > 40s com testes excessivos)
+- Foco em cenários reais de falha
+- Menos duplicação (não testamos o que o framework já testa)
 
 ---
 
