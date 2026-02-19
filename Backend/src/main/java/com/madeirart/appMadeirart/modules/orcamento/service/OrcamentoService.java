@@ -237,7 +237,7 @@ public class OrcamentoService {
 
         Parcela entrada = Parcela.builder()
                 .orcamento(orcamento)
-                .numeroParcela(0)
+                .numeroParcela(1)
                 .valor(dto.valorEntrada())
                 .dataVencimento(dto.dataEntrada())
                 .build();
@@ -249,7 +249,7 @@ public class OrcamentoService {
                 var parcelaDTO = dto.parcelas().get(i);
                 Parcela parcela = Parcela.builder()
                         .orcamento(orcamento)
-                        .numeroParcela(i + 1)
+                        .numeroParcela(i + 2)
                         .valor(parcelaDTO.valor())
                         .dataVencimento(parcelaDTO.dataVencimento())
                         .build();
