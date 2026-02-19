@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -13,21 +13,23 @@ import {
   TableHead,
   TableRow,
   Grid2,
-  Divider,
   Alert,
+  CircularProgress,
 } from "@mui/material";
 import { Add, Delete, Save, ArrowBack } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import { useSnackbar } from "../../hooks/useSnackbar";
 import orcamentoService from "../../services/orcamentoService";
 import { formatCurrency } from "../../utils/formatters";
 
 export default function OrcamentoForm() {
   const navigate = useNavigate();
+  const { id } = useParams();
   const { showSuccess, showError } = useSnackbar();
   const [loading, setLoading] = useState(false);
+  const [loadingData, setLoadingData] = useState(false);
+  const isEditMode = !!id;
 
-  // Estado do formulário principal
   const [formData, setFormData] = useState({
     cliente: "",
     moveis: "",
@@ -38,44 +40,76 @@ export default function OrcamentoForm() {
     cpc: "",
   });
 
-  // Estado dos itens de material
   const [itens, setItens] = useState([
     { quantidade: "", descricao: "", valorUnitario: "" },
   ]);
 
-  // Erros de validação
   const [errors, setErrors] = useState({});
 
-  // Adiciona novo item vazio
+  // Carrega dados do orçamento em modo de edição
+  useEffect(() => {
+    const carregarOrcamento = async () => {
+      if (isEditMode) {
+        try {
+          setLoadingData(true);
+          const dados = await orcamentoService.buscarPorId(id);
+
+          setFormData({
+            cliente: dados.cliente,
+            moveis: dados.moveis,
+            data: dados.data,
+            previsaoEntrega: dados.previsaoEntrega || "",
+            fatorMaoDeObra: dados.fatorMaoDeObra.toString(),
+            custosExtras: dados.custosExtras
+              ? dados.custosExtras.toString()
+              : "",
+            cpc: dados.cpc ? dados.cpc.toString() : "",
+          });
+
+          setItens(
+            dados.itens.map((item) => ({
+              quantidade: item.quantidade.toString(),
+              descricao: item.descricao,
+              valorUnitario: item.valorUnitario.toString(),
+            })),
+          );
+        } catch (err) {
+          showError("Erro ao carregar orçamento");
+          console.error(err);
+          navigate("/orcamentos");
+        } finally {
+          setLoadingData(false);
+        }
+      }
+    };
+
+    carregarOrcamento();
+  }, [id, isEditMode, navigate, showError]);
+
   const adicionarItem = () => {
     setItens([...itens, { quantidade: "", descricao: "", valorUnitario: "" }]);
   };
 
-  // Remove item por índice
   const removerItem = (index) => {
     if (itens.length > 1) {
       setItens(itens.filter((_, i) => i !== index));
     }
   };
 
-  // Atualiza campo do item
   const atualizarItem = (index, campo, valor) => {
     const novosItens = [...itens];
     novosItens[index][campo] = valor;
     setItens(novosItens);
   };
 
-  // Atualiza campo do formulário principal
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData({ ...formData, [name]: value });
-    // Limpa erro do campo ao editar
     if (errors[name]) {
       setErrors({ ...errors, [name]: null });
     }
   };
 
-  // Cálculo do subtotal de materiais
   const calcularSubtotalMateriais = () => {
     return itens.reduce((total, item) => {
       const quantidade = parseFloat(item.quantidade) || 0;
@@ -84,14 +118,12 @@ export default function OrcamentoForm() {
     }, 0);
   };
 
-  // Cálculo do valor de mão de obra
   const calcularValorMaoDeObra = () => {
     const subtotal = calcularSubtotalMateriais();
     const fator = parseFloat(formData.fatorMaoDeObra) || 0;
     return subtotal * fator;
   };
 
-  // Cálculo do valor total
   const calcularValorTotal = () => {
     const custoObra = calcularValorMaoDeObra();
     const custosExtras = parseFloat(formData.custosExtras) || 0;
@@ -99,7 +131,6 @@ export default function OrcamentoForm() {
     return custoObra + custosExtras + cpc;
   };
 
-  // Validação do formulário
   const validarFormulario = () => {
     const novosErros = {};
 
@@ -115,29 +146,29 @@ export default function OrcamentoForm() {
     if (!formData.previsaoEntrega) {
       novosErros.previsaoEntrega = "Previsão de entrega é obrigatória";
     }
-    if (!formData.fatorMaoDeObra || parseFloat(formData.fatorMaoDeObra) < 0) {
-      novosErros.fatorMaoDeObra = "Fator de mão de obra deve ser maior ou igual a 0";
+    if (!formData.fatorMaoDeObra || parseFloat(formData.fatorMaoDeObra) < 1) {
+      novosErros.fatorMaoDeObra =
+        "Fator de mão de obra deve ser maior ou igual a 1";
     }
 
-    // Validação dos itens
     const itensValidos = itens.every(
       (item) =>
         item.quantidade &&
         parseFloat(item.quantidade) > 0 &&
         item.descricao.trim() &&
         item.valorUnitario &&
-        parseFloat(item.valorUnitario) >= 0
+        parseFloat(item.valorUnitario) >= 0,
     );
 
     if (!itensValidos) {
-      novosErros.itens = "Todos os itens devem ter quantidade, descrição e valor preenchidos";
+      novosErros.itens =
+        "Todos os itens devem ter quantidade, descrição e valor preenchidos";
     }
 
     setErrors(novosErros);
     return Object.keys(novosErros).length === 0;
   };
 
-  // Submissão do formulário
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -165,12 +196,18 @@ export default function OrcamentoForm() {
         })),
       };
 
-      await orcamentoService.criar(payload);
-      showSuccess("Orçamento criado com sucesso!");
+      if (isEditMode) {
+        await orcamentoService.atualizar(id, payload);
+        showSuccess("Orçamento atualizado com sucesso!");
+      } else {
+        await orcamentoService.criar(payload);
+        showSuccess("Orçamento criado com sucesso!");
+      }
+
       navigate("/orcamentos");
     } catch (error) {
-      console.error("Erro ao criar orçamento:", error);
-      showError(error.response?.data?.message || "Erro ao criar orçamento");
+      console.error("Erro ao salvar orçamento:", error);
+      showError(error.response?.data?.message || "Erro ao salvar orçamento");
     } finally {
       setLoading(false);
     }
@@ -180,6 +217,21 @@ export default function OrcamentoForm() {
   const valorMaoDeObra = calcularValorMaoDeObra();
   const valorTotal = calcularValorTotal();
 
+  if (loadingData) {
+    return (
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          minHeight: 400,
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
   return (
     <Box>
       <Box sx={{ mb: 3, display: "flex", alignItems: "center", gap: 2 }}>
@@ -187,7 +239,7 @@ export default function OrcamentoForm() {
           <ArrowBack />
         </IconButton>
         <Typography variant="h4" sx={{ fontWeight: 600 }}>
-          Novo Orçamento
+          {isEditMode ? "Editar Orçamento" : "Novo Orçamento"}
         </Typography>
       </Box>
 
@@ -263,7 +315,10 @@ export default function OrcamentoForm() {
                 value={formData.fatorMaoDeObra}
                 onChange={handleChange}
                 error={!!errors.fatorMaoDeObra}
-                helperText={errors.fatorMaoDeObra || "Ex: 1.5 (150% do custo dos materiais)"}
+                helperText={
+                  errors.fatorMaoDeObra ||
+                  "Ex: 1.5 (150% do custo dos materiais)"
+                }
                 inputProps={{ step: "0.1", min: "0" }}
                 required
               />
@@ -298,9 +353,20 @@ export default function OrcamentoForm() {
         </Paper>
 
         <Paper sx={{ p: 3, mb: 3 }}>
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 3,
+            }}
+          >
             <Typography variant="h6">Materiais</Typography>
-            <Button startIcon={<Add />} onClick={adicionarItem} variant="outlined">
+            <Button
+              startIcon={<Add />}
+              onClick={adicionarItem}
+              variant="outlined"
+            >
               Adicionar Item
             </Button>
           </Box>
@@ -315,17 +381,28 @@ export default function OrcamentoForm() {
             <Table>
               <TableHead>
                 <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                  <TableCell sx={{ fontWeight: "bold", width: "15%" }}>Quantidade</TableCell>
-                  <TableCell sx={{ fontWeight: "bold", width: "45%" }}>Descrição</TableCell>
-                  <TableCell sx={{ fontWeight: "bold", width: "20%" }}>Valor Unitário</TableCell>
-                  <TableCell sx={{ fontWeight: "bold", width: "15%" }}>Subtotal</TableCell>
-                  <TableCell sx={{ fontWeight: "bold", width: "5%" }}></TableCell>
+                  <TableCell sx={{ fontWeight: "bold", width: "15%" }}>
+                    Quantidade
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: "bold", width: "45%" }}>
+                    Descrição
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: "bold", width: "20%" }}>
+                    Valor Unitário
+                  </TableCell>
+                  <TableCell sx={{ fontWeight: "bold", width: "15%" }}>
+                    Subtotal
+                  </TableCell>
+                  <TableCell
+                    sx={{ fontWeight: "bold", width: "5%" }}
+                  ></TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {itens.map((item, index) => {
                   const subtotal =
-                    (parseFloat(item.quantidade) || 0) * (parseFloat(item.valorUnitario) || 0);
+                    (parseFloat(item.quantidade) || 0) *
+                    (parseFloat(item.valorUnitario) || 0);
 
                   return (
                     <TableRow key={index}>
@@ -334,7 +411,9 @@ export default function OrcamentoForm() {
                           fullWidth
                           type="number"
                           value={item.quantidade}
-                          onChange={(e) => atualizarItem(index, "quantidade", e.target.value)}
+                          onChange={(e) =>
+                            atualizarItem(index, "quantidade", e.target.value)
+                          }
                           inputProps={{ min: "0" }}
                           size="small"
                         />
@@ -343,7 +422,9 @@ export default function OrcamentoForm() {
                         <TextField
                           fullWidth
                           value={item.descricao}
-                          onChange={(e) => atualizarItem(index, "descricao", e.target.value)}
+                          onChange={(e) =>
+                            atualizarItem(index, "descricao", e.target.value)
+                          }
                           placeholder="Ex: Tábua de pinus 2m"
                           size="small"
                         />
@@ -353,7 +434,13 @@ export default function OrcamentoForm() {
                           fullWidth
                           type="number"
                           value={item.valorUnitario}
-                          onChange={(e) => atualizarItem(index, "valorUnitario", e.target.value)}
+                          onChange={(e) =>
+                            atualizarItem(
+                              index,
+                              "valorUnitario",
+                              e.target.value,
+                            )
+                          }
                           inputProps={{ min: "0" }}
                           size="small"
                         />
@@ -392,7 +479,10 @@ export default function OrcamentoForm() {
                 <Typography variant="caption" color="text.secondary">
                   Subtotal de Materiais
                 </Typography>
-                <Typography variant="h6" sx={{ fontWeight: "bold", color: "#1976d2" }}>
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: "bold", color: "#1976d2" }}
+                >
                   {formatCurrency(subtotalMateriais)}
                 </Typography>
               </Box>
@@ -403,7 +493,10 @@ export default function OrcamentoForm() {
                 <Typography variant="caption" color="text.secondary">
                   Valor Mão de Obra
                 </Typography>
-                <Typography variant="h6" sx={{ fontWeight: "bold", color: "#ed6c02" }}>
+                <Typography
+                  variant="h6"
+                  sx={{ fontWeight: "bold", color: "#ed6c02" }}
+                >
                   {formatCurrency(valorMaoDeObra)}
                 </Typography>
                 <Typography variant="caption" color="text.secondary">
@@ -417,10 +510,16 @@ export default function OrcamentoForm() {
                 <Typography variant="caption" sx={{ color: "white" }}>
                   Valor Total do Orçamento
                 </Typography>
-                <Typography variant="h5" sx={{ fontWeight: "bold", color: "white" }}>
+                <Typography
+                  variant="h5"
+                  sx={{ fontWeight: "bold", color: "white" }}
+                >
                   {formatCurrency(valorTotal)}
                 </Typography>
-                <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.8)" }}>
+                <Typography
+                  variant="caption"
+                  sx={{ color: "rgba(255,255,255,0.8)" }}
+                >
                   (Mão de Obra + Extras + CPC)
                 </Typography>
               </Box>
@@ -429,7 +528,11 @@ export default function OrcamentoForm() {
         </Paper>
 
         <Box sx={{ display: "flex", gap: 2, justifyContent: "flex-end" }}>
-          <Button variant="outlined" onClick={() => navigate("/orcamentos")} disabled={loading}>
+          <Button
+            variant="outlined"
+            onClick={() => navigate("/orcamentos")}
+            disabled={loading}
+          >
             Cancelar
           </Button>
           <Button

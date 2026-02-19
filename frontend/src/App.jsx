@@ -6,6 +6,7 @@ import MainLayout from "./components/Layout/MainLayout";
 import Dashboard from "./views/Dashboard/Dashboard";
 import OrcamentosList from "./views/Orcamentos/OrcamentosList";
 import OrcamentoForm from "./views/Orcamentos/OrcamentoForm";
+import OrcamentoDetalhes from "./views/Orcamentos/OrcamentoDetalhes";
 
 const theme = createTheme({
   palette: {
@@ -33,6 +34,8 @@ function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/orcamentos" element={<OrcamentosList />} />
               <Route path="/orcamentos/novo" element={<OrcamentoForm />} />
+              <Route path="/orcamentos/:id" element={<OrcamentoDetalhes />} />
+              <Route path="/orcamentos/:id/editar" element={<OrcamentoForm />} />
               <Route
                 path="/calendario"
                 element={<div>Calendário em desenvolvimento</div>}

@@ -49,6 +49,15 @@ const orcamentoService = {
   deletar: async (id) => {
     await api.delete(`/orcamentos/${id}`);
   },
+
+  /**
+   * Busca o histórico de auditoria de um orçamento
+   * @param {number} id - ID do orçamento
+   */
+  buscarHistorico: async (id) => {
+    const response = await api.get(`/orcamentos/${id}/historico`);
+    return response.data;
+  },
 };
 
 export default orcamentoService;
