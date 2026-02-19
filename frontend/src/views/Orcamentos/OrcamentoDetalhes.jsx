@@ -18,22 +18,24 @@ import {
   Tabs,
   Tab,
 } from "@mui/material";
-import { ArrowBack, Edit } from "@mui/icons-material";
+import { ArrowBack, Edit, PlayArrow } from "@mui/icons-material";
 import { useNavigate, useParams } from "react-router-dom";
 import { useSnackbar } from "../../hooks/useSnackbar";
 import orcamentoService from "../../services/orcamentoService";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import { STATUS_LABELS, STATUS_CORES } from "../../utils/constants";
+import IniciarProducaoDialog from "./IniciarProducaoDialog";
 
 export default function OrcamentoDetalhes() {
   const navigate = useNavigate();
   const { id } = useParams();
-  const { showError } = useSnackbar();
+  const { showError, showSuccess } = useSnackbar();
   const [loading, setLoading] = useState(true);
   const [orcamento, setOrcamento] = useState(null);
   const [historico, setHistorico] = useState([]);
   const [tabAtiva, setTabAtiva] = useState(0);
   const [loadingHistorico, setLoadingHistorico] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
 
   useEffect(() => {
     const carregarDados = async () => {
@@ -55,7 +57,7 @@ export default function OrcamentoDetalhes() {
 
   const carregarHistorico = async () => {
     if (historico.length > 0) return;
-    
+
     try {
       setLoadingHistorico(true);
       const dados = await orcamentoService.buscarHistorico(id);
@@ -75,6 +77,47 @@ export default function OrcamentoDetalhes() {
     }
   };
 
+  const handleIniciarProducao = async (dados) => {
+    try {
+      const orcamentoAtualizado = await orcamentoService.iniciarProducao(
+        id,
+        dados,
+      );
+      setOrcamento(orcamentoAtualizado);
+      setDialogOpen(false);
+      showSuccess("Produção iniciada com sucesso!");
+    } catch (err) {
+      console.error("Erro ao iniciar produção:", err);
+
+      let mensagem = "Erro ao iniciar produção";
+
+      if (err.response) {
+        const { status, data } = err.response;
+
+        if (status === 500) {
+          mensagem =
+            "Erro interno no servidor. Verifique os dados e tente novamente.";
+        } else if (status === 400) {
+          mensagem =
+            typeof data === "string"
+              ? data
+              : data?.message || "Dados inválidos";
+        } else if (data) {
+          mensagem =
+            typeof data === "string"
+              ? data
+              : data?.message || data?.error || mensagem;
+        }
+      } else if (err.request) {
+        mensagem = "Servidor não respondeu. Verifique sua conexão.";
+      } else {
+        mensagem = err.message || mensagem;
+      }
+
+      showError(mensagem);
+    }
+  };
+
   if (loading) {
     return (
       <Box
@@ -91,14 +134,19 @@ export default function OrcamentoDetalhes() {
   }
 
   if (!orcamento) {
-    return (
-      <Alert severity="error">Orçamento não encontrado</Alert>
-    );
+    return <Alert severity="error">Orçamento não encontrado</Alert>;
   }
 
   return (
     <Box>
-      <Box sx={{ mb: 3, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+      <Box
+        sx={{
+          mb: 3,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <IconButton onClick={() => navigate("/orcamentos")} color="primary">
             <ArrowBack />
@@ -107,19 +155,31 @@ export default function OrcamentoDetalhes() {
             Detalhes do Orçamento #{orcamento.id}
           </Typography>
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<Edit />}
-          onClick={() => navigate(`/orcamentos/${id}/editar`)}
-          sx={{
-            backgroundColor: "#D2691E",
-            "&:hover": {
-              backgroundColor: "#B8551A",
-            },
-          }}
-        >
-          Editar
-        </Button>
+        <Box sx={{ display: "flex", gap: 2 }}>
+          {orcamento.status === "AGUARDANDO" && (
+            <Button
+              variant="contained"
+              color="success"
+              startIcon={<PlayArrow />}
+              onClick={() => setDialogOpen(true)}
+            >
+              Iniciar Produção
+            </Button>
+          )}
+          <Button
+            variant="contained"
+            startIcon={<Edit />}
+            onClick={() => navigate(`/orcamentos/${id}/editar`)}
+            sx={{
+              backgroundColor: "#D2691E",
+              "&:hover": {
+                backgroundColor: "#B8551A",
+              },
+            }}
+          >
+            Editar
+          </Button>
+        </Box>
       </Box>
 
       <Tabs value={tabAtiva} onChange={handleTabChange} sx={{ mb: 3 }}>
@@ -180,7 +240,9 @@ export default function OrcamentoDetalhes() {
                   Previsão de Entrega
                 </Typography>
                 <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  {orcamento.previsaoEntrega ? formatDate(orcamento.previsaoEntrega) : "-"}
+                  {orcamento.previsaoEntrega
+                    ? formatDate(orcamento.previsaoEntrega)
+                    : "-"}
                 </Typography>
               </Grid2>
 
@@ -222,9 +284,13 @@ export default function OrcamentoDetalhes() {
               <Table>
                 <TableHead>
                   <TableRow sx={{ backgroundColor: "#f5f5f5" }}>
-                    <TableCell sx={{ fontWeight: "bold" }}>Quantidade</TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }}>
+                      Quantidade
+                    </TableCell>
                     <TableCell sx={{ fontWeight: "bold" }}>Descrição</TableCell>
-                    <TableCell sx={{ fontWeight: "bold" }}>Valor Unitário</TableCell>
+                    <TableCell sx={{ fontWeight: "bold" }}>
+                      Valor Unitário
+                    </TableCell>
                     <TableCell sx={{ fontWeight: "bold" }}>Subtotal</TableCell>
                   </TableRow>
                 </TableHead>
@@ -233,7 +299,9 @@ export default function OrcamentoDetalhes() {
                     <TableRow key={index}>
                       <TableCell>{item.quantidade}</TableCell>
                       <TableCell>{item.descricao}</TableCell>
-                      <TableCell>{formatCurrency(item.valorUnitario)}</TableCell>
+                      <TableCell>
+                        {formatCurrency(item.valorUnitario)}
+                      </TableCell>
                       <TableCell sx={{ fontWeight: "bold" }}>
                         {formatCurrency(item.subtotal)}
                       </TableCell>
@@ -255,7 +323,10 @@ export default function OrcamentoDetalhes() {
                   <Typography variant="caption" color="text.secondary">
                     Subtotal de Materiais
                   </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: "bold", color: "#1976d2" }}>
+                  <Typography
+                    variant="h6"
+                    sx={{ fontWeight: "bold", color: "#1976d2" }}
+                  >
                     {formatCurrency(orcamento.subtotalMateriais)}
                   </Typography>
                 </Box>
@@ -266,7 +337,10 @@ export default function OrcamentoDetalhes() {
                   <Typography variant="caption" color="text.secondary">
                     Valor Mão de Obra
                   </Typography>
-                  <Typography variant="h6" sx={{ fontWeight: "bold", color: "#ed6c02" }}>
+                  <Typography
+                    variant="h6"
+                    sx={{ fontWeight: "bold", color: "#ed6c02" }}
+                  >
                     {formatCurrency(orcamento.valorMaoDeObra)}
                   </Typography>
                   <Typography variant="caption" color="text.secondary">
@@ -280,10 +354,16 @@ export default function OrcamentoDetalhes() {
                   <Typography variant="caption" sx={{ color: "white" }}>
                     Valor Total do Orçamento
                   </Typography>
-                  <Typography variant="h5" sx={{ fontWeight: "bold", color: "white" }}>
+                  <Typography
+                    variant="h5"
+                    sx={{ fontWeight: "bold", color: "white" }}
+                  >
                     {formatCurrency(orcamento.valorTotal)}
                   </Typography>
-                  <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.8)" }}>
+                  <Typography
+                    variant="caption"
+                    sx={{ color: "rgba(255,255,255,0.8)" }}
+                  >
                     (Mão de Obra + Extras + CPC)
                   </Typography>
                 </Box>
@@ -319,7 +399,13 @@ export default function OrcamentoDetalhes() {
 
                 return (
                   <Paper key={item.id} variant="outlined" sx={{ p: 2 }}>
-                    <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        mb: 2,
+                      }}
+                    >
                       <Typography variant="subtitle2" color="primary">
                         Versão #{historico.length - index}
                       </Typography>
@@ -351,7 +437,8 @@ export default function OrcamentoDetalhes() {
                             Status
                           </Typography>
                           <Typography variant="body2">
-                            {STATUS_LABELS[dadosAntigos.status] || dadosAntigos.status}
+                            {STATUS_LABELS[dadosAntigos.status] ||
+                              dadosAntigos.status}
                           </Typography>
                         </Grid2>
                         <Grid2 item xs={6} md={3}>
@@ -375,6 +462,13 @@ export default function OrcamentoDetalhes() {
           )}
         </Paper>
       )}
+
+      <IniciarProducaoDialog
+        open={dialogOpen}
+        onClose={() => setDialogOpen(false)}
+        orcamento={orcamento}
+        onConfirm={handleIniciarProducao}
+      />
     </Box>
   );
 }
