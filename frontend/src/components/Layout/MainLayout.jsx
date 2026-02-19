@@ -15,7 +15,6 @@ export default function MainLayout({ children }) {
         component="main"
         sx={{
           flexGrow: 1,
-        //   ml: `${DRAWER_WIDTH}px`,
           width: `calc(100% - ${DRAWER_WIDTH}px)`,
         }}
       >

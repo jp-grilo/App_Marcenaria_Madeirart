@@ -5,6 +5,7 @@ import SnackbarProvider from "./components/SnackbarProvider";
 import MainLayout from "./components/Layout/MainLayout";
 import Dashboard from "./views/Dashboard/Dashboard";
 import OrcamentosList from "./views/Orcamentos/OrcamentosList";
+import OrcamentoForm from "./views/Orcamentos/OrcamentoForm";
 
 const theme = createTheme({
   palette: {
@@ -31,6 +32,7 @@ function App() {
             <Routes>
               <Route path="/" element={<Dashboard />} />
               <Route path="/orcamentos" element={<OrcamentosList />} />
+              <Route path="/orcamentos/novo" element={<OrcamentoForm />} />
               <Route
                 path="/calendario"
                 element={<div>Calendário em desenvolvimento</div>}

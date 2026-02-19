@@ -7,11 +7,11 @@
 **Descrição:** Como marceneiro, quero cadastrar um orçamento detalhando materiais e taxas para calcular o preço final de forma precisa.
 
 - **Campos:** Cliente, Móveis, Data, Previsão de Entrega, Itens (Quantidade, Descrição, Valor Unitário), Fator (Mão de Obra), Custos Extras e CPC.
+
 - **Cálculos Automáticos:**
--
--
--
--
+- Esses valores não serão preenchidos manualmente, sendo calculados com base nos valores disponíveis
+- Custo da obra = (Soma do valor dos materiais) * Fator mão de obra 
+- Valor total =  Custo da obra + custos extras + CPC
 
 - **Tarefas Backend:**
 - Entidades `Orcamento` e `ItemMaterial` com os campos de cálculo.

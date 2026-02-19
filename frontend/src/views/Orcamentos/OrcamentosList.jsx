@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import {
   Box,
   Typography,
@@ -23,33 +23,31 @@ import { STATUS_LABELS, STATUS_CORES } from "../../utils/constants";
 
 export default function OrcamentosList() {
   const navigate = useNavigate();
-  const { showSuccess, showError } = useSnackbar();
+  const { showError } = useSnackbar();
   const [orcamentos, setOrcamentos] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  const carregarOrcamentos = useCallback(async () => {
-    try {
-      setLoading(true);
-      setError(null);
-      const dados = await orcamentoService.listar();
-      setOrcamentos(dados);
-      if (dados.length > 0) {
-        showSuccess(`${dados.length} orçamento(s) carregado(s) com sucesso`);
-      }
-    } catch (err) {
-      const mensagem = "Erro ao carregar orçamentos. Verifique se o backend está rodando.";
-      setError(mensagem);
-      showError(mensagem);
-      console.error(err);
-    } finally {
-      setLoading(false);
-    }
-  }, [showSuccess, showError]);
-
   useEffect(() => {
+    const carregarOrcamentos = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const dados = await orcamentoService.listar();
+        setOrcamentos(dados);
+      } catch (err) {
+        const mensagem = "Erro ao carregar orçamentos. Verifique se o backend está rodando.";
+        setError(mensagem);
+        showError(mensagem);
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     carregarOrcamentos();
-  }, [carregarOrcamentos]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (loading) {
     return (
