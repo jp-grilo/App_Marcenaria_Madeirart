@@ -2,21 +2,26 @@ package com.madeirart.appMadeirart.modules.orcamento.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.madeirart.appMadeirart.modules.orcamento.dto.ItemMaterialDTO;
+import com.madeirart.appMadeirart.modules.orcamento.dto.IniciarProducaoDTO;
 import com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoAuditoriaDTO;
 import com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoRequestDTO;
 import com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoResponseDTO;
 import com.madeirart.appMadeirart.modules.orcamento.entity.ItemMaterial;
 import com.madeirart.appMadeirart.modules.orcamento.entity.Orcamento;
 import com.madeirart.appMadeirart.modules.orcamento.entity.OrcamentoAuditoria;
+import com.madeirart.appMadeirart.modules.orcamento.entity.Parcela;
 import com.madeirart.appMadeirart.modules.orcamento.repository.OrcamentoAuditoriaRepository;
 import com.madeirart.appMadeirart.modules.orcamento.repository.OrcamentoRepository;
+import com.madeirart.appMadeirart.modules.orcamento.repository.ParcelaRepository;
 import com.madeirart.appMadeirart.shared.enums.StatusOrcamento;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,6 +34,7 @@ public class OrcamentoService {
 
     private final OrcamentoRepository orcamentoRepository;
     private final OrcamentoAuditoriaRepository auditoriaRepository;
+    private final ParcelaRepository parcelaRepository;
     private final ObjectMapper objectMapper;
 
     /**
@@ -73,7 +79,8 @@ public class OrcamentoService {
 
     /**
      * Atualiza um orçamento existente
-     * Antes de atualizar, salva um snapshot do estado anterior na tabela de auditoria
+     * Antes de atualizar, salva um snapshot do estado anterior na tabela de
+     * auditoria
      */
     @Transactional
     public OrcamentoResponseDTO atualizarOrcamento(Long id, OrcamentoRequestDTO dto) {
@@ -149,8 +156,7 @@ public class OrcamentoService {
                         item.getQuantidade(),
                         item.getDescricao(),
                         item.getValorUnitario(),
-                        item.calcularSubtotal()
-                ))
+                        item.calcularSubtotal()))
                 .collect(Collectors.toList());
 
         return OrcamentoResponseDTO.builder()
@@ -178,20 +184,83 @@ public class OrcamentoService {
     private void salvarAuditoria(Orcamento orcamento) {
         try {
             OrcamentoResponseDTO dto = convertToResponseDTO(orcamento);
-            
+
             String snapshotJson = objectMapper.writeValueAsString(dto);
-            
+
             OrcamentoAuditoria auditoria = OrcamentoAuditoria.builder()
                     .orcamentoId(orcamento.getId())
                     .snapshotJson(snapshotJson)
                     .dataAlteracao(LocalDateTime.now())
                     .descricaoAlteracao("Atualização de orçamento")
                     .build();
-            
+
             auditoriaRepository.save(auditoria);
         } catch (Exception e) {
             System.err.println("Erro ao salvar auditoria: " + e.getMessage());
         }
+    }
+
+    /**
+     * Inicia a produção de um orçamento e define o plano de parcelas
+     */
+    @Transactional
+    public OrcamentoResponseDTO iniciarProducao(Long id, IniciarProducaoDTO dto) {
+        Orcamento orcamento = orcamentoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Orçamento não encontrado com ID: " + id));
+
+        if (orcamento.getStatus() != StatusOrcamento.AGUARDANDO) {
+            throw new IllegalStateException(
+                    "Orçamento deve estar com status AGUARDANDO para iniciar produção. Status atual: "
+                            + orcamento.getStatus());
+        }
+
+        BigDecimal valorTotal = orcamento.calcularValorTotal();
+        BigDecimal somaParcelas = dto.parcelas() != null && !dto.parcelas().isEmpty()
+                ? dto.parcelas().stream()
+                        .map(p -> p.valor())
+                        .reduce(BigDecimal.ZERO, BigDecimal::add)
+                : BigDecimal.ZERO;
+        BigDecimal somaEntradaEParcelas = dto.valorEntrada().add(somaParcelas);
+
+        if (somaEntradaEParcelas.compareTo(valorTotal) != 0) {
+            throw new IllegalArgumentException(
+                    String.format(
+                            "A soma da entrada (%s) e parcelas (%s) deve ser igual ao valor total do orçamento (%s)",
+                            dto.valorEntrada(),
+                            somaParcelas,
+                            valorTotal));
+        }
+
+        salvarAuditoria(orcamento);
+
+        orcamento.setStatus(StatusOrcamento.INICIADA);
+
+        Parcela entrada = Parcela.builder()
+                .orcamento(orcamento)
+                .numeroParcela(1)
+                .valor(dto.valorEntrada())
+                .dataVencimento(dto.dataEntrada())
+                .build();
+        parcelaRepository.save(entrada);
+
+        if (dto.parcelas() != null && !dto.parcelas().isEmpty()) {
+            List<Parcela> parcelas = new ArrayList<>();
+            for (int i = 0; i < dto.parcelas().size(); i++) {
+                var parcelaDTO = dto.parcelas().get(i);
+                Parcela parcela = Parcela.builder()
+                        .orcamento(orcamento)
+                        .numeroParcela(i + 2)
+                        .valor(parcelaDTO.valor())
+                        .dataVencimento(parcelaDTO.dataVencimento())
+                        .build();
+                parcelas.add(parcela);
+            }
+            parcelaRepository.saveAll(parcelas);
+        }
+
+        orcamento = orcamentoRepository.save(orcamento);
+
+        return convertToResponseDTO(orcamento);
     }
 
     /**

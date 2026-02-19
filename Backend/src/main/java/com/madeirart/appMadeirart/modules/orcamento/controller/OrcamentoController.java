@@ -1,5 +1,6 @@
 package com.madeirart.appMadeirart.modules.orcamento.controller;
 
+import com.madeirart.appMadeirart.modules.orcamento.dto.IniciarProducaoDTO;
 import com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoAuditoriaDTO;
 import com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoRequestDTO;
 import com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoResponseDTO;
@@ -93,6 +94,24 @@ public class OrcamentoController {
             return ResponseEntity.noContent().build();
         } catch (EntityNotFoundException e) {
             return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
+     * Inicia a produção de um orçamento com o plano de parcelas
+     * PATCH /api/orcamentos/{id}/iniciar
+     */
+    @PatchMapping("/{id}/iniciar")
+    public ResponseEntity<OrcamentoResponseDTO> iniciarProducao(
+            @PathVariable Long id,
+            @Valid @RequestBody IniciarProducaoDTO dto) {
+        try {
+            OrcamentoResponseDTO response = orcamentoService.iniciarProducao(id, dto);
+            return ResponseEntity.ok(response);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        } catch (IllegalStateException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().build();
         }
     }
 

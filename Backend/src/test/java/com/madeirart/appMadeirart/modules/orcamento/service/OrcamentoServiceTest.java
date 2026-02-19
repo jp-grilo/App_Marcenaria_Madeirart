@@ -1,14 +1,18 @@
 package com.madeirart.appMadeirart.modules.orcamento.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.madeirart.appMadeirart.modules.orcamento.dto.IniciarProducaoDTO;
 import com.madeirart.appMadeirart.modules.orcamento.dto.ItemMaterialDTO;
 import com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoAuditoriaDTO;
 import com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoRequestDTO;
 import com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoResponseDTO;
+import com.madeirart.appMadeirart.modules.orcamento.dto.ParcelaDTO;
+import com.madeirart.appMadeirart.modules.orcamento.entity.ItemMaterial;
 import com.madeirart.appMadeirart.modules.orcamento.entity.Orcamento;
 import com.madeirart.appMadeirart.modules.orcamento.entity.OrcamentoAuditoria;
 import com.madeirart.appMadeirart.modules.orcamento.repository.OrcamentoAuditoriaRepository;
 import com.madeirart.appMadeirart.modules.orcamento.repository.OrcamentoRepository;
+import com.madeirart.appMadeirart.modules.orcamento.repository.ParcelaRepository;
 import com.madeirart.appMadeirart.shared.enums.StatusOrcamento;
 
 import jakarta.persistence.EntityNotFoundException;
@@ -45,6 +49,9 @@ class OrcamentoServiceTest {
     private OrcamentoAuditoriaRepository auditoriaRepository;
 
     @Mock
+    private ParcelaRepository parcelaRepository;
+
+    @Mock
     private ObjectMapper objectMapper;
 
     @InjectMocks
@@ -60,8 +67,7 @@ class OrcamentoServiceTest {
                 new BigDecimal("4"),
                 "Placa MDF 15mm",
                 new BigDecimal("180.00"),
-                null
-        );
+                null);
 
         requestDTO = new OrcamentoRequestDTO(
                 "João Silva",
@@ -71,8 +77,7 @@ class OrcamentoServiceTest {
                 new BigDecimal("1.5"),
                 new BigDecimal("250.00"),
                 new BigDecimal("150.00"),
-                List.of(item)
-        );
+                List.of(item));
 
         orcamento = new Orcamento();
         orcamento.setId(1L);
@@ -225,5 +230,118 @@ class OrcamentoServiceTest {
         List<OrcamentoAuditoriaDTO> historico = orcamentoService.buscarHistorico(1L);
 
         assertThat(historico).isEmpty();
+    }
+
+    @Test
+    @DisplayName("Deve iniciar produção com sucesso")
+    void deveIniciarProducaoComSucesso() throws Exception {
+        ItemMaterial item = new ItemMaterial();
+        item.setQuantidade(new BigDecimal("4"));
+        item.setDescricao("Placa MDF 15mm");
+        item.setValorUnitario(new BigDecimal("180.00"));
+        orcamento.adicionarItem(item);
+
+        ParcelaDTO parcela1 = new ParcelaDTO(new BigDecimal("600.00"), LocalDate.now().plusDays(30));
+        ParcelaDTO parcela2 = new ParcelaDTO(new BigDecimal("600.00"), LocalDate.now().plusDays(60));
+
+        IniciarProducaoDTO dto = new IniciarProducaoDTO(
+                new BigDecimal("1000.00"),
+                LocalDate.now(),
+                List.of(parcela1, parcela2));
+
+        when(orcamentoRepository.findById(1L)).thenReturn(Optional.of(orcamento));
+        when(orcamentoRepository.save(any(Orcamento.class))).thenReturn(orcamento);
+        when(objectMapper.writeValueAsString(any())).thenReturn("{\"id\":1}");
+
+        OrcamentoResponseDTO response = orcamentoService.iniciarProducao(1L, dto);
+
+        assertThat(response).isNotNull();
+        assertThat(orcamento.getStatus()).isEqualTo(StatusOrcamento.INICIADA);
+        verify(parcelaRepository).save(any());
+        verify(parcelaRepository).saveAll(anyList());
+        verify(auditoriaRepository).save(any());
+    }
+
+    @Test
+    @DisplayName("Deve iniciar produção com pagamento integral sem parcelas")
+    void deveIniciarProducaoComPagamentoIntegral() throws Exception {
+
+        ItemMaterial item = new ItemMaterial();
+        item.setQuantidade(new BigDecimal("4"));
+        item.setDescricao("Placa MDF 15mm");
+        item.setValorUnitario(new BigDecimal("180.00"));
+        orcamento.adicionarItem(item);
+
+        IniciarProducaoDTO dto = new IniciarProducaoDTO(
+                new BigDecimal("2200.00"),
+                LocalDate.now(),
+                List.of());
+
+        when(orcamentoRepository.findById(1L)).thenReturn(Optional.of(orcamento));
+        when(orcamentoRepository.save(any(Orcamento.class))).thenReturn(orcamento);
+        when(objectMapper.writeValueAsString(any())).thenReturn("{\"id\":1}");
+
+        OrcamentoResponseDTO response = orcamentoService.iniciarProducao(1L, dto);
+
+        assertThat(response).isNotNull();
+        assertThat(orcamento.getStatus()).isEqualTo(StatusOrcamento.INICIADA);
+        verify(parcelaRepository).save(any());
+        verify(parcelaRepository, never()).saveAll(anyList());
+        verify(auditoriaRepository).save(any());
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao iniciar produção de orçamento inexistente")
+    void deveLancarExcecaoAoIniciarProducaoDeOrcamentoInexistente() {
+        IniciarProducaoDTO dto = new IniciarProducaoDTO(
+                new BigDecimal("500.00"),
+                LocalDate.now(),
+                List.of());
+
+        when(orcamentoRepository.findById(999L)).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> orcamentoService.iniciarProducao(999L, dto))
+                .isInstanceOf(EntityNotFoundException.class)
+                .hasMessageContaining("Orçamento não encontrado");
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao iniciar produção de orçamento com status diferente de AGUARDANDO")
+    void deveLancarExcecaoAoIniciarProducaoComStatusIncorreto() {
+        orcamento.setStatus(StatusOrcamento.INICIADA);
+
+        IniciarProducaoDTO dto = new IniciarProducaoDTO(
+                new BigDecimal("500.00"),
+                LocalDate.now(),
+                List.of());
+
+        when(orcamentoRepository.findById(1L)).thenReturn(Optional.of(orcamento));
+
+        assertThatThrownBy(() -> orcamentoService.iniciarProducao(1L, dto))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("AGUARDANDO");
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção quando soma das parcelas não bate com valor total")
+    void deveLancarExcecaoQuandoSomaParcelasNaoBateComValorTotal() {
+        ItemMaterial item = new ItemMaterial();
+        item.setQuantidade(new BigDecimal("4"));
+        item.setDescricao("Placa MDF 15mm");
+        item.setValorUnitario(new BigDecimal("180.00"));
+        orcamento.adicionarItem(item);
+
+        ParcelaDTO parcela1 = new ParcelaDTO(new BigDecimal("400.00"), LocalDate.now().plusDays(30));
+
+        IniciarProducaoDTO dto = new IniciarProducaoDTO(
+                new BigDecimal("500.00"),
+                LocalDate.now(),
+                List.of(parcela1));
+
+        when(orcamentoRepository.findById(1L)).thenReturn(Optional.of(orcamento));
+
+        assertThatThrownBy(() -> orcamentoService.iniciarProducao(1L, dto))
+                .isInstanceOf(IllegalArgumentException.class)
+                .hasMessageContaining("soma da entrada");
     }
 }

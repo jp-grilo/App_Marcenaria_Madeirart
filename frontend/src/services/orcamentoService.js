@@ -58,6 +58,16 @@ const orcamentoService = {
     const response = await api.get(`/orcamentos/${id}/historico`);
     return response.data;
   },
+
+  /**
+   * Inicia a produção de um orçamento com plano de parcelas
+   * @param {number} id - ID do orçamento
+   * @param {object} dados - { valorEntrada, dataEntrada, parcelas: [{valor, dataVencimento}] }
+   */
+  iniciarProducao: async (id, dados) => {
+    const response = await api.patch(`/orcamentos/${id}/iniciar`, dados);
+    return response.data;
+  },
 };
 
 export default orcamentoService;
