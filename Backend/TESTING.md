@@ -1,16 +1,33 @@
-# 🧪 Testes do Backend - Módulo Orçamento
+# 🧪 Testes do Backend
 
-## 📊 Cobertura de Testes
+## Cobertura de Testes
 
-###Testes Criados
+### Testes Criados
 
-| Tipo            | Arquivo                   | Qtd Testes    | Descrição         |
-| --------------- | ------------------------- | ------------- | ----------------- |
-| **Unit**        | `OrcamentoServiceTest`    | 17            | Service com mocks |
-| **Integration** | `OrcamentoControllerTest` | 16            | Endpoints REST    |
-| **Unit**        | `ParcelaServiceTest`      | 10            | Service com mocks |
-| **Integration** | `ParcelaControllerTest`   | 9             | Endpoints REST    |
-| **TOTAL**       | **4 arquivos**            | **52 testes** |                   |
+#### Módulo Orçamento
+
+| Tipo            | Arquivo                   | Qtd Testes | Descrição         |
+| --------------- | ------------------------- | ---------- | ----------------- |
+| **Unit**        | `OrcamentoServiceTest`    | 17         | Service com mocks |
+| **Integration** | `OrcamentoControllerTest` | 16         | Endpoints REST    |
+| **Unit**        | `ParcelaServiceTest`      | 10         | Service com mocks |
+| **Integration** | `ParcelaControllerTest`   | 9          | Endpoints REST    |
+| **Subtotal**    | **4 arquivos**            | **52**     |                   |
+
+#### Módulo Custos
+
+| Tipo            | Arquivo                       | Qtd Testes | Descrição         |
+| --------------- | ----------------------------- | ---------- | ----------------- |
+| **Unit**        | `CustoVariavelServiceTest`    | 13         | Service com mocks |
+| **Integration** | `CustoVariavelControllerTest` | 10         | Endpoints REST    |
+| **Unit**        | `CustoFixoServiceTest`        | 18         | Service com mocks |
+| **Integration** | `CustoFixoControllerTest`     | 17         | Endpoints REST    |
+| **Subtotal**    | **4 arquivos**                | **58**     |                   |
+
+#### Total Geral
+
+| **TOTAL** | **8 arquivos** | **110 testes** |
+| --------- | -------------- | -------------- |
 
 ## Como Executar
 
@@ -23,7 +40,12 @@ mvnw test
 ### Testes de um módulo específico
 
 ```bash
+# Orçamento
 mvnw test -Dtest="OrcamentoServiceTest"
+
+# Custos
+mvnw test -Dtest="CustoFixoServiceTest"
+mvnw test -Dtest="CustoVariavelServiceTest"
 ```
 
 ### Modo watch (reexecutar ao salvar)
@@ -246,6 +268,156 @@ Verificação de parcelas atrasadas concluída. Total de parcelas atualizadas: 3
 
 ---
 
+## Módulo Custos - US07
+
+### **Testes Unitários do Service** (`CustoVariavelServiceTest` e `CustoFixoServiceTest`)
+
+**Stack:** JUnit 5 + Mockito + AssertJ  
+**Total:** 31 testes (13 CustoVariável + 18 CustoFixo)
+
+**O que testa:**
+
+**CustoVariavelServiceTest (13 testes):**
+
+- Criação de custo variável com sucesso
+- Busca por ID com sucesso
+- Lançar exceção ao buscar custo inexistente
+- Atualização com sucesso
+- Lançar exceção ao atualizar custo inexistente
+- Exclusão com sucesso
+- Lançar exceção ao excluir custo inexistente
+- Listagem de todos os custos (ordenados por data de lançamento)
+- Conversão de entidade para DTO (incluindo campo status)
+- Listagem por período de datas (filtro por data de lançamento)
+- Retornar lista vazia quando não há custos no período
+- Inicialização do status como PENDENTE em novos custos
+- Preservação do status existente ao atualizar
+
+**CustoFixoServiceTest (18 testes):**
+
+- Criação de custo fixo com sucesso
+- Inicialização de ativo=true por padrão
+- Busca por ID com sucesso
+- Lançar exceção ao buscar custo inexistente
+- Atualização com sucesso
+- Lançar exceção ao atualizar custo inexistente
+- Desativação (soft delete) de custo
+- Lançar exceção ao desativar custo inexistente
+- Reativação de custo desativado
+- Lançar exceção ao reativar custo inexistente
+- Exclusão (hard delete) com sucesso
+- Lançar exceção ao excluir custo inexistente
+- Listagem de todos os custos (ordenados por nome)
+- Listagem de custos ativos (apenas ativo=true)
+- Listagem por período de dias do mês (filtro por diaVencimento)
+- Listagem de custos ativos ordenados por dia de vencimento
+- Inicialização do status como PENDENTE em novos custos
+- Preservação do status existente ao atualizar
+
+**Exemplo:**
+
+```java
+@Test
+@DisplayName("Deve criar custo variável com sucesso")
+void deveCriarCustoVariavel() {
+    when(custoVariavelRepository.save(any(CustoVariavel.class))).thenReturn(custoVariavel);
+
+    CustoVariavelResponseDTO response = custoVariavelService.criar(requestDTO);
+
+    assertThat(response).isNotNull();
+    assertThat(response.id()).isEqualTo(1L);
+    assertThat(response.status()).isEqualTo(StatusCusto.PENDENTE);
+    verify(custoVariavelRepository).save(any(CustoVariavel.class));
+}
+```
+
+---
+
+### **Testes de Integração do Controller** (`CustoVariavelControllerTest` e `CustoFixoControllerTest`)
+
+**Stack:** Spring MockMvc + @WebMvcTest  
+**Total:** 27 testes (10 CustoVariável + 17 CustoFixo)
+
+**O que testa:**
+
+**CustoVariavelControllerTest (10 testes):**
+
+- **POST `/api/custos-variaveis` - Criação com sucesso (201)**
+- **POST `/api/custos-variaveis` - Validação de dados inválidos (400)**
+- **GET `/api/custos-variaveis/{id}` - Busca com sucesso (200)**
+- **GET `/api/custos-variaveis/{id}` - Custo não encontrado (404)**
+- **GET `/api/custos-variaveis` - Listagem completa**
+- **GET `/api/custos-variaveis?dataInicio=X&dataFim=Y` - Filtro por período**
+- **PUT `/api/custos-variaveis/{id}` - Atualização com sucesso (200)**
+- **PUT `/api/custos-variaveis/{id}` - Atualização de custo inexistente (404)**
+- **DELETE `/api/custos-variaveis/{id}` - Deleção com sucesso (204)**
+- **DELETE `/api/custos-variaveis/{id}` - Deleção de custo inexistente (404)**
+
+**CustoFixoControllerTest (17 testes):**
+
+- **POST `/api/custos-fixos` - Criação com sucesso (201)**
+- **POST `/api/custos-fixos` - Validação de dados inválidos (400)**
+- **GET `/api/custos-fixos/{id}` - Busca com sucesso (200)**
+- **GET `/api/custos-fixos/{id}` - Custo não encontrado (404)**
+- **GET `/api/custos-fixos` - Listagem completa**
+- **GET `/api/custos-fixos?apenasAtivos=true` - Filtro de custos ativos**
+- **GET `/api/custos-fixos?orderByDiaVencimento=true` - Ordenação por dia de vencimento**
+- **GET `/api/custos-fixos?apenasAtivos=true&orderByDiaVencimento=true` - Filtros combinados**
+- **GET `/api/custos-fixos?diaInicio=X&diaFim=Y` - Filtro por período de dias do mês**
+- **PUT `/api/custos-fixos/{id}` - Atualização com sucesso (200)**
+- **PUT `/api/custos-fixos/{id}` - Atualização de custo inexistente (404)**
+- **PATCH `/api/custos-fixos/{id}/desativar` - Desativação (soft delete) com sucesso (200)**
+- **PATCH `/api/custos-fixos/{id}/desativar` - Desativação de custo inexistente (404)**
+- **PATCH `/api/custos-fixos/{id}/reativar` - Reativação com sucesso (200)**
+- **PATCH `/api/custos-fixos/{id}/reativar` - Reativação de custo inexistente (404)**
+- **DELETE `/api/custos-fixos/{id}` - Deleção permanente com sucesso (204)**
+- **DELETE `/api/custos-fixos/{id}` - Deleção de custo inexistente (404)**
+
+**Exemplo:**
+
+```java
+@Test
+@DisplayName("GET /api/custos-fixos?apenasAtivos=true - Deve listar apenas custos ativos")
+void deveListarApenasAtivos() throws Exception {
+    when(custoFixoService.listarAtivos()).thenReturn(List.of(responseDTO));
+
+    mockMvc.perform(get("/api/custos-fixos")
+            .param("apenasAtivos", "true"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$[0].id").value(1))
+        .andExpect(jsonPath("$[0].ativo").value(true));
+
+    verify(custoFixoService).listarAtivos();
+}
+```
+
+---
+
+### **Funcionalidades Testadas - US07**
+
+**Cobertura:**
+
+**Custo Variável:**
+
+- CRUD completo (Create, Read, Update, Delete)
+- Listagem ordenada por data de lançamento (mais recente primeiro)
+- Filtro por período de datas completo (dataInicio até dataFim)
+- Inicialização e gerenciamento do campo status (PENDENTE/PAGO)
+- Validação de campos obrigatórios e regras de negócio
+
+**Custo Fixo:**
+
+- CRUD completo com soft delete (desativar/reativar)
+- Hard delete (exclusão permanente) disponível
+- Listagem ordenada por nome ou por dia de vencimento
+- Filtro de custos ativos (ativo=true)
+- Filtro por período de dias do mês (diaInicio até diaFim, valores 1-31)
+- Validação do campo diaVencimento (1-31)
+- Inicialização automática de ativo=true e status=PENDENTE
+- Gerenciamento do campo status (PENDENTE/PAGO)
+
+---
+
 ## Padrões e Boas Práticas Aplicadas
 
 ### Nomenclatura Clara
@@ -295,9 +467,9 @@ assertThat(response.id()).isEqualTo(1L);
 
 ### Performance
 
-- Testes unitários (Service): < 6s
-- Testes de integração (Controller): < 10s
-- **Total (49 testes): < 16s**
+- Testes unitários (Service): < 8s
+- Testes de integração (Controller): < 12s
+- **Total (110 testes): < 20s**
 
 ---
 
@@ -343,7 +515,7 @@ Todas incluídas via `spring-boot-starter-test`:
 
 ---
 
-## Por que Apenas 49 Testes?
+## Por que Apenas 110 Testes?
 
 ### Pragmatismo > Cobertura Cega
 
@@ -356,16 +528,16 @@ Todas incluídas via `spring-boot-starter-test`:
 
 **Testamos:**
 
-- **Service** - Nossa lógica de negócio (conversões, regras, auditoria, confirmação de pagamentos)
+- **Service** - Nossa lógica de negócio (conversões, regras, auditoria, confirmação de pagamentos, gestão de custos)
 - **Controller** - Contrato de API (HTTP status, JSON, validações)
 - **US02** - Funcionalidades de auditoria (histórico de alterações)
 - **US03** - Iniciação de produção e plano de parcelamento
 - **US04** - Confirmação manual de pagamentos
+- **US07** - Gestão de custos fixos e variáveis (CRUD, soft delete, filtros por período)
 
 ### Resultado
 
 - Manutenção mais fácil (menos código de teste para atualizar)
-- Build mais rápido (< 16s vs > 40s com testes excessivos)
 - Foco em cenários reais de falha
 - Menos duplicação (não testamos o que o framework já testa)
 
