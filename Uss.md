@@ -10,8 +10,8 @@
 
 - **Cálculos Automáticos:**
 - Esses valores não serão preenchidos manualmente, sendo calculados com base nos valores disponíveis
-- Custo da obra = (Soma do valor dos materiais) * Fator mão de obra 
-- Valor total =  Custo da obra + custos extras + CPC
+- Custo da obra = (Soma do valor dos materiais) \* Fator mão de obra
+- Valor total = Custo da obra + custos extras + CPC
 
 - **Tarefas Backend:**
 - Entidades `Orcamento` e `ItemMaterial` com os campos de cálculo.
@@ -74,23 +74,24 @@
 
 **Descrição:** Na tela de detalhamento do orçamento, quero ver visualmente quanto do valor total já foi efetivamente pago.
 
-		**Descrição:** Na tela de **Detalhamento do Orçamento**, quero ver visualmente quanto do valor total já foi efetivamente pago, com informações detalhadas e ações manuais para confirmação de recebimento.
+    	**Descrição:** Na tela de **Detalhamento do Orçamento**, quero ver visualmente quanto do valor total já foi efetivamente pago, com informações detalhadas e ações manuais para confirmação de recebimento.
 
-		**Critérios de Aceite:**
-			- Exibir uma área (estilo card) dentro do detalhamento com:
-				- "Total do Orçamento: R$ X"
-				- "Total Já Confirmado: R$ Y" (Baseado em parcelas marcadas manualmente como `PAGO`).
-				- "Progresso: [Barra de porcentagem]".
-			- Lista de parcelas com botão "Confirmar Recebimento" para efetivar o valor no caixa.
+    	**Critérios de Aceite:**
+    		- Exibir uma área (estilo card) dentro do detalhamento com:
+    			- "Total do Orçamento: R$ X"
+    			- "Total Já Confirmado: R$ Y" (Baseado em parcelas marcadas manualmente como `PAGO`).
+    			- "Progresso: [Barra de porcentagem]".
+    		- Lista de parcelas com botão "Confirmar Recebimento" para efetivar o valor no caixa.
 
-		**Tarefas Backend:**
-			- Endpoint de detalhe deve retornar o `Soma(ParcelasPagas)`, `ValorTotalOrcamento` e status das parcelas.
-			- Endpoint `PATCH /parcelas/{id}/confirmar` para atualizar data de recebimento real.
+    	**Tarefas Backend:**
+    		- Endpoint de detalhe deve retornar o `Soma(ParcelasPagas)`, `ValorTotalOrcamento` e status das parcelas.
+    		- Endpoint `PATCH /parcelas/{id}/confirmar` para atualizar data de recebimento real.
 
-		**Tarefas Frontend:**
-			- Widget de Status de Recebimento (card com totais e barra de progresso).
-			- Lista de parcelas no detalhamento do orçamento com botões de "Confirmar Recebimento".
-			- Barra de progresso ou gráfico de rosca exibindo o percentual já recebido.
+    	**Tarefas Frontend:**
+    		- Widget de Status de Recebimento (card com totais e barra de progresso).
+    		- Lista de parcelas no detalhamento do orçamento com botões de "Confirmar Recebimento".
+    		- Barra de progresso ou gráfico de rosca exibindo o percentual já recebido.
+
 - Componente de Barra de Progresso ou Gráfico de Rosca na lateral do detalhamento/formulário.
 
 ---
@@ -112,20 +113,25 @@ Aqui estão as novas User Stories (USs) detalhadas para os módulos de custos, d
 
 **Descrição:** Como marceneiro, quero cadastrar meus custos fixos (recorrentes) e variáveis (pontuais) para que o sistema possa prever e registrar as saídas de caixa.
 
-- **Critérios de Aceite:**
-- Para **Custos Fixos**: Informar nome, valor e o dia do mês para débito automático no sistema.
-- Para **Custos Variáveis**: Informar nome, valor e data específica.
-- O sistema deve permitir editar ou excluir esses lançamentos.
+### Critérios de Aceite
 
-- **Tarefas Backend (Spring Boot):**
-- Criar entidades `CustoFixo` (nome, valor, diaVencimento) e `CustoVariavel` (nome, valor, dataLancamento).
-- Implementar endpoints de CRUD para ambas as entidades.
-- Lógica para projetar o `CustoFixo` em todos os meses futuros no fluxo de caixa.
+- Para **Custos Fixos**: Informar nome, valor e o dia do mês para débito automático no sistema
+- Para **Custos Variáveis**: Informar nome, valor e data específica
+- O sistema deve permitir editar ou excluir esses lançamentos
 
-- **Tarefas Frontend (React):**
-- Tela de "Gestão de Custos" com duas abas ou seções distintas.
-- Formulário para custo fixo com seletor numérico (1 a 31) para o dia de débito.
-- Formulário para custo variável com seletor de data.
+### Tarefas Backend (Spring Boot)
+
+- [ ] Criar entidades `CustoFixo` (nome, valor, diaVencimento) e `CustoVariavel` (nome, valor, dataLancamento)
+- [ ] Implementar endpoints de CRUD para `CustoFixo`
+- [ ] Implementar endpoints de CRUD para `CustoVariavel`
+- [ ] Implementar lógica para projetar o `CustoFixo` em todos os meses futuros no fluxo de caixa
+
+### Tarefas Frontend (React)
+
+- [ ] Criar tela de "Gestão de Custos" com duas abas ou seções distintas
+- [ ] Implementar formulário para custo fixo com seletor numérico (1 a 31) para o dia de débito
+- [ ] Implementar formulário para custo variável com seletor de data
+- [ ] Criar listagens para ambos os tipos de custos com ações de editar e excluir
 
 ---
 
@@ -133,21 +139,28 @@ Aqui estão as novas User Stories (USs) detalhadas para os módulos de custos, d
 
 ### US08: Dashboard de Calendário Financeiro
 
-**Descrição:** Como marceneiro, quero visualizar um calendário com indicadores de entradas e saídas diárias para entender minha movimentação financeira de forma visual e rápida.
+**Descrição:**
 
-- **Critérios de Aceite:**
-- O calendário deve mostrar uma marcação verde para dias com entradas (parcelas pagas/a receber) e vermelha para dias com saídas (custos).
-- Ao clicar em um dia, um modal deve abrir listando individualmente cada transação.
-- **Regra de Exibição:** O modal não deve somar os valores; se houver 3 saídas de R$ 100, deve mostrar as três linhas separadamente.
+Como marceneiro, quero visualizar um calendário com indicadores de entradas e saídas diárias para entender minha movimentação financeira de forma visual e rápida.
 
-- **Tarefas Backend (Spring Boot):**
-- Endpoint `GET /financeiro/calendario?mes=X&ano=Y`.
-- Lógica para consolidar dados de `Parcela` (Entradas) e `Custos` (Saídas) agrupados por dia.
+### Critérios de Aceite
 
-- **Tarefas Frontend (React):**
-- Implementar componente de Calendário em `views/Dashboard/components/`.
-- Lógica de estilo condicional (CSS) para os indicadores de cores.
-- Componente `ModalDetalheDia` que mapeia a lista de transações do dia selecionado.
+- O calendário deve mostrar uma marcação verde para dias com entradas (parcelas pagas/a receber) e vermelha para dias com saídas (custos)
+- Ao clicar em um dia, um modal deve abrir listando individualmente cada transação
+- **Regra de Exibição:** O modal não deve somar os valores; se houver 3 saídas de R$ 100, deve mostrar as três linhas separadamente
+
+### Tarefas Backend (Spring Boot)
+
+- [ ] Criar endpoint `GET /financeiro/calendario?mes=X&ano=Y`
+- [ ] Implementar lógica para consolidar dados de `Parcela` (Entradas) e `Custos` (Saídas) agrupados por dia
+- [ ] Retornar estrutura de dados otimizada para renderização do calendário
+
+### Tarefas Frontend (React)
+
+- [ ] Implementar componente de Calendário em `views/Dashboard/components/`
+- [ ] Implementar lógica de estilo condicional (CSS) para os indicadores de cores
+- [ ] Criar componente `ModalDetalheDia` que mapeia a lista de transações do dia selecionado
+- [ ] Adicionar navegação de mês anterior/próximo
 
 ---
 
@@ -155,49 +168,50 @@ Aqui estão as novas User Stories (USs) detalhadas para os módulos de custos, d
 
 ### US09: Relatório Detalhado (Extrato Financeiro)
 
-**Descrição:** Como marceneiro, quero uma tela de extrato detalhado para auditar todas as transações passadas e visualizar o que está planejado para o futuro.
+**Descrição:**
 
-- **Critérios de Aceite:**
-- Lista em ordem cronológica (mais recente para mais antiga por padrão).
-- Cada linha deve mostrar: Data, Descrição, Tipo (Entrada/Saída), Forma de Pagamento e Valor.
-- Filtros obrigatórios: Intervalo de datas, Tipo (Entrada/Saída) e Forma de Pagamento (Pix, Débito, Crédito, etc.).
+Como marceneiro, quero uma tela de extrato detalhado para auditar todas as transações passadas e visualizar o que está planejado para o futuro.
 
-- **Tarefas Backend (Spring Boot):**
-- Endpoint `GET /financeiro/extrato` com filtros via Query Parameters.
-- Uso de _Spring Data JPA Specifications_ ou _Criteria API_ para os filtros dinâmicos.
+### Critérios de Aceite
 
-- **Tarefas Frontend (React):**
-- View `views/Financeiro/RelatorioFinanceiro.jsx`.
-- Componente de Filtro Lateral ou Topo.
-- Tabela de extrato com estilização distinta para entradas (+) e saídas (-).
+- Lista em ordem cronológica (mais recente para mais antiga por padrão)
+- Cada linha deve mostrar: Data, Descrição, Tipo (Entrada/Saída), Forma de Pagamento e Valor
+- Filtros obrigatórios: Intervalo de datas, Tipo (Entrada/Saída) e Forma de Pagamento (Pix, Débito, Crédito, etc.)
+
+### Tarefas Backend (Spring Boot)
+
+- [ ] Criar endpoint `GET /financeiro/extrato` com filtros via Query Parameters
+- [ ] Implementar uso de _Spring Data JPA Specifications_ ou _Criteria API_ para os filtros dinâmicos
+- [ ] Adicionar suporte para paginação e ordenação
+
+### Tarefas Frontend (React)
+
+- [ ] Criar view `views/Financeiro/RelatorioFinanceiro.jsx`
+- [ ] Implementar componente de Filtro Lateral ou Topo
+- [ ] Criar tabela de extrato com estilização distinta para entradas (+) e saídas (-)
+- [ ] Adicionar controles de data range, tipo e forma de pagamento
 
 ---
 
 ### US10: Visualização de Projeções Futuras
 
-**Descrição:** Como marceneiro, quero poder filtrar transações futuras no meu extrato para antecipar como estará meu caixa nos próximos meses.
+**Descrição:**
 
-- **Critérios de Aceite:**
-- Ao ativar o filtro "Transações Futuras", a lista deve inverter a lógica: a transação mais distante no futuro deve aparecer no topo.
-- Deve incluir as parcelas de orçamentos `INICIADA` ainda não pagas e os custos fixos dos meses seguintes.
+Como marceneiro, quero poder filtrar transações futuras no meu extrato para antecipar como estará meu caixa nos próximos meses.
 
-- **Tarefas Backend (Spring Boot):**
-- Lógica no `FinanceiroService` para unir transações reais (passado) e transações previstas (futuro) na mesma resposta de API.
-- Parâmetro de ordenação `sort=desc` ou `sort=asc` baseado na data.
+### Critérios de Aceite
 
-- **Tarefas Frontend (React):**
-- Toggle/Switch de "Ver Futuro" na tela de Relatório.
-- Lógica de reordenação automática da lista ao ativar a visão de projeção.
+- Ao ativar o filtro "Transações Futuras", a lista deve inverter a lógica: a transação mais distante no futuro deve aparecer no topo
+- Deve incluir as parcelas de orçamentos `INICIADA` ainda não pagas e os custos fixos dos meses seguintes
 
----
+### Tarefas Backend (Spring Boot)
 
-### 💡 Indicação Visual de Pagamento (Adição à US de Detalhe)
+- [ ] Implementar lógica no `FinanceiroService` para unir transações reais (passado) e transações previstas (futuro) na mesma resposta de API
+- [ ] Adicionar parâmetro de ordenação `sort=desc` ou `sort=asc` baseado na data
+- [ ] Implementar projeção de custos fixos para meses futuros
 
-Para a tela de **Detalhamento do Orçamento**, incluiremos:
+### Tarefas Frontend (React)
 
-- **Widget de Status de Recebimento:** Uma área (estilo card) dentro do detalhamento que exibe:
-- "Total do Orçamento: R$ X"
-- "Total Já Confirmado: R$ Y" (Baseado em parcelas marcadas manualmente como `PAGO`).
-- "Progresso: [Barra de porcentagem]".
-
-- **Ação Manual:** Lista de parcelas com o botão "Confirmar Recebimento" que o usuário deve clicar para efetivar o valor no caixa.
+- [ ] Adicionar Toggle/Switch de "Ver Futuro" na tela de Relatório
+- [ ] Implementar lógica de reordenação automática da lista ao ativar a visão de projeção
+- [ ] Adicionar indicador visual diferenciando transações já efetivadas de projeções
