@@ -1,5 +1,5 @@
 import { Box, TextField, Typography, Grid2 } from "@mui/material";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency } from "../../../utils/formatters";
 
 export default function ParcelasAutomaticas({
   valorRestante,
