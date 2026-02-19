@@ -1,10 +1,14 @@
 package com.madeirart.appMadeirart.modules.orcamento.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.madeirart.appMadeirart.modules.orcamento.dto.ItemMaterialDTO;
+import com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoAuditoriaDTO;
 import com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoRequestDTO;
 import com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoResponseDTO;
 import com.madeirart.appMadeirart.modules.orcamento.entity.ItemMaterial;
 import com.madeirart.appMadeirart.modules.orcamento.entity.Orcamento;
+import com.madeirart.appMadeirart.modules.orcamento.entity.OrcamentoAuditoria;
+import com.madeirart.appMadeirart.modules.orcamento.repository.OrcamentoAuditoriaRepository;
 import com.madeirart.appMadeirart.modules.orcamento.repository.OrcamentoRepository;
 import com.madeirart.appMadeirart.shared.enums.StatusOrcamento;
 import jakarta.persistence.EntityNotFoundException;
@@ -12,6 +16,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -23,6 +28,8 @@ import java.util.stream.Collectors;
 public class OrcamentoService {
 
     private final OrcamentoRepository orcamentoRepository;
+    private final OrcamentoAuditoriaRepository auditoriaRepository;
+    private final ObjectMapper objectMapper;
 
     /**
      * Cria um novo orçamento
@@ -66,13 +73,15 @@ public class OrcamentoService {
 
     /**
      * Atualiza um orçamento existente
+     * Antes de atualizar, salva um snapshot do estado anterior na tabela de auditoria
      */
     @Transactional
     public OrcamentoResponseDTO atualizarOrcamento(Long id, OrcamentoRequestDTO dto) {
         Orcamento orcamento = orcamentoRepository.findById(id)
                 .orElseThrow(() -> new EntityNotFoundException("Orçamento não encontrado com ID: " + id));
 
-        // Atualiza os campos básicos
+        salvarAuditoria(orcamento);
+
         orcamento.setCliente(dto.cliente());
         orcamento.setMoveis(dto.moveis());
         orcamento.setData(dto.data());
@@ -81,10 +90,8 @@ public class OrcamentoService {
         orcamento.setCustosExtras(dto.custosExtras());
         orcamento.setCpc(dto.cpc());
 
-        // Remove todos os itens existentes
         orcamento.getItens().clear();
 
-        // Adiciona os novos itens
         dto.itens().forEach(itemDTO -> {
             ItemMaterial item = new ItemMaterial();
             item.setQuantidade(itemDTO.quantidade());
@@ -121,7 +128,6 @@ public class OrcamentoService {
         orcamento.setCustosExtras(dto.custosExtras());
         orcamento.setCpc(dto.cpc());
 
-        // Adiciona os itens mantendo a relação bidirecional
         dto.itens().forEach(itemDTO -> {
             ItemMaterial item = new ItemMaterial();
             item.setQuantidade(itemDTO.quantidade());
@@ -163,6 +169,56 @@ public class OrcamentoService {
                 .valorTotal(orcamento.calcularValorTotal())
                 .createdAt(orcamento.getCreatedAt())
                 .updatedAt(orcamento.getUpdatedAt())
+                .build();
+    }
+
+    /**
+     * Salva um snapshot do orçamento para auditoria
+     */
+    private void salvarAuditoria(Orcamento orcamento) {
+        try {
+            OrcamentoResponseDTO dto = convertToResponseDTO(orcamento);
+            
+            String snapshotJson = objectMapper.writeValueAsString(dto);
+            
+            OrcamentoAuditoria auditoria = OrcamentoAuditoria.builder()
+                    .orcamentoId(orcamento.getId())
+                    .snapshotJson(snapshotJson)
+                    .dataAlteracao(LocalDateTime.now())
+                    .descricaoAlteracao("Atualização de orçamento")
+                    .build();
+            
+            auditoriaRepository.save(auditoria);
+        } catch (Exception e) {
+            System.err.println("Erro ao salvar auditoria: " + e.getMessage());
+        }
+    }
+
+    /**
+     * Busca o histórico de auditoria de um orçamento
+     */
+    @Transactional(readOnly = true)
+    public List<OrcamentoAuditoriaDTO> buscarHistorico(Long orcamentoId) {
+        if (!orcamentoRepository.existsById(orcamentoId)) {
+            throw new EntityNotFoundException("Orçamento não encontrado com ID: " + orcamentoId);
+        }
+
+        return auditoriaRepository.findByOrcamentoIdOrderByDataAlteracaoDesc(orcamentoId)
+                .stream()
+                .map(this::convertToAuditoriaDTO)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Converte entidade de auditoria para DTO
+     */
+    private OrcamentoAuditoriaDTO convertToAuditoriaDTO(OrcamentoAuditoria auditoria) {
+        return OrcamentoAuditoriaDTO.builder()
+                .id(auditoria.getId())
+                .orcamentoId(auditoria.getOrcamentoId())
+                .snapshotJson(auditoria.getSnapshotJson())
+                .dataAlteracao(auditoria.getDataAlteracao())
+                .descricaoAlteracao(auditoria.getDescricaoAlteracao())
                 .build();
     }
 }

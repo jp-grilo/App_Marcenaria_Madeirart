@@ -1,5 +1,6 @@
 package com.madeirart.appMadeirart.modules.orcamento.controller;
 
+import com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoAuditoriaDTO;
 import com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoRequestDTO;
 import com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoResponseDTO;
 import com.madeirart.appMadeirart.modules.orcamento.service.OrcamentoService;
@@ -90,6 +91,20 @@ public class OrcamentoController {
         try {
             orcamentoService.deletarOrcamento(id);
             return ResponseEntity.noContent().build();
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
+     * Busca o histórico de auditoria de um orçamento
+     * GET /api/orcamentos/{id}/historico
+     */
+    @GetMapping("/{id}/historico")
+    public ResponseEntity<List<OrcamentoAuditoriaDTO>> buscarHistorico(@PathVariable Long id) {
+        try {
+            List<OrcamentoAuditoriaDTO> historico = orcamentoService.buscarHistorico(id);
+            return ResponseEntity.ok(historico);
         } catch (EntityNotFoundException e) {
             return ResponseEntity.notFound().build();
         }
