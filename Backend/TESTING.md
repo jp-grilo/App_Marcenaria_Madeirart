@@ -1,18 +1,16 @@
 # 🧪 Testes do Backend - Módulo Orçamento
 
-Testes essenciais e pragmáticos para a US01 (Elaboração do Orçamento Técnico).
-
 ## 📊 Cobertura de Testes
 
-### ✅ Testes Criados
+###Testes Criados
 
 | Tipo | Arquivo | Qtd Testes | Descrição |
 |------|---------|------------|-----------|
-| **Unit** | `OrcamentoServiceTest` | 7 | Service com mocks |
-| **Integration** | `OrcamentoControllerTest` | 8 | Endpoints REST |
-| **TOTAL** | **2 arquivos** | **15 testes** | |
+| **Unit** | `OrcamentoServiceTest` | 12 | Service com mocks |
+| **Integration** | `OrcamentoControllerTest` | 11 | Endpoints REST |
+| **TOTAL** | **2 arquivos** | **23 testes** | |
 
-## 🚀 Como Executar
+## Como Executar
 
 ### Todos os testes
 ```bash
@@ -31,21 +29,25 @@ mvnw test -Dsurefire.failIfNoTests=false
 
 ---
 
-## 📋 Estrutura dos Testes
+## Estrutura dos Testes
 
-### 1️⃣ **Testes Unitários do Service** (`OrcamentoServiceTest`)
+### **Testes Unitários do Service** (`OrcamentoServiceTest`)
 
 **Stack:** JUnit 5 + Mockito + AssertJ  
-**Total:** 7 testes
+**Total:** 12 testes
 
 **O que testa:**
-- ✅ Criação de orçamento
-- ✅ Busca por ID (sucesso)
-- ✅ Busca por ID (erro - orçamento inexistente)
-- ✅ Listagem por status
-- ✅ Atualização (sucesso)
-- ✅ Atualização (erro - orçamento inexistente)
-- ✅ Deleção
+- Criação de orçamento
+- Busca por ID (sucesso)
+- Busca por ID (erro - orçamento inexistente)
+- Listagem por status
+- Atualização (sucesso)
+- Atualização (erro - orçamento inexistente)
+- Deleção
+- Salvamento de auditoria ao atualizar
+- Busca de histórico de auditoria
+- Erro ao buscar histórico de orçamento inexistente
+- Histórico vazio para orçamento sem alterações
 
 **Exemplo:**
 ```java
@@ -64,20 +66,23 @@ void deveCriarOrcamento() {
 
 ---
 
-### 2️⃣ **Testes de Integração do Controller** (`OrcamentoControllerTest`)
+### **Testes de Integração do Controller** (`OrcamentoControllerTest`)
 
 **Stack:** Spring MockMvc + @WebMvcTest  
-**Total:** 8 testes
+**Total:** 11 testes
 
 **O que testa:**
-- ✅ POST `/api/orcamentos` - Criação com sucesso (201)
-- ✅ POST `/api/orcamentos` - Validação de dados inválidos (400)
-- ✅ GET `/api/orcamentos/{id}` - Busca com sucesso (200)
-- ✅ GET `/api/orcamentos/{id}` - Orçamento não encontrado (404)
-- ✅ GET `/api/orcamentos` - Listagem completa
-- ✅ GET `/api/orcamentos?status=X` - Filtro por status
-- ✅ PUT `/api/orcamentos/{id}` - Atualização
-- ✅ DELETE `/api/orcamentos/{id}` - Deleção (204)
+- POST `/api/orcamentos` - Criação com sucesso (201)
+- POST `/api/orcamentos` - Validação de dados inválidos (400)
+- GET `/api/orcamentos/{id}` - Busca com sucesso (200)
+- GET `/api/orcamentos/{id}` - Orçamento não encontrado (404)
+- GET `/api/orcamentos` - Listagem completa
+- GET `/api/orcamentos?status=X` - Filtro por status
+- PUT `/api/orcamentos/{id}` - Atualização
+- DELETE `/api/orcamentos/{id}` - Deleção (204)
+- GET `/api/orcamentos/{id}/historico` - Busca histórico de auditoria
+- GET `/api/orcamentos/{id}/historico` - Erro 404 para orçamento inexistente
+- GET `/api/orcamentos/{id}/historico` - Lista vazia quando não há histórico
 
 **Exemplo:**
 ```java
@@ -97,13 +102,44 @@ void deveCriarOrcamento() throws Exception {
 
 ---
 
-## 🎯 Padrões e Boas Práticas Aplicadas
+### **Testes de Auditoria - US02** (Novos)
 
-### ✅ Nomenclatura Clara
+**Adicionados:** 8 testes (5 Service + 3 Controller)
+
+**Cobertura:**
+-Salvamento automático de snapshot ao atualizar orçamento
+-Busca de histórico ordenado por data (mais recente primeiro)
+-Validação de orçamento existente antes de buscar histórico
+-Tratamento de orçamento sem histórico (lista vazia)
+-Endpoint REST `/api/orcamentos/{id}/historico`
+-Tratamento de erros (404 para orçamento inexistente)
+
+**Exemplo de teste de auditoria:**
+```java
+@Test
+@DisplayName("Deve salvar auditoria ao atualizar orçamento")
+void deveSalvarAuditoriaAoAtualizar() throws Exception {
+    when(orcamentoRepository.findById(1L)).thenReturn(Optional.of(orcamento));
+    when(orcamentoRepository.save(any(Orcamento.class))).thenReturn(orcamento);
+    when(objectMapper.writeValueAsString(any())).thenReturn("{\"id\":1}");
+    when(auditoriaRepository.save(any(OrcamentoAuditoria.class)))
+        .thenReturn(new OrcamentoAuditoria());
+
+    orcamentoService.atualizarOrcamento(1L, requestDTO);
+
+    verify(auditoriaRepository).save(any(OrcamentoAuditoria.class));
+}
+```
+
+---
+
+## Padrões e Boas Práticas Aplicadas
+
+### Nomenclatura Clara
 - Prefixo `deve` + ação + condição
 - Ex: `deveCriarOrcamento`, `deveLancarExcecaoQuandoNaoEncontrado`
 
-### ✅ AAA Pattern (Arrange-Act-Assert)
+### AAA Pattern (Arrange-Act-Assert)
 ```java
 // Arrange - preparação
 when(repository.save(any())).thenReturn(orcamento);
@@ -115,33 +151,33 @@ OrcamentoResponseDTO response = service.criarOrcamento(dto);
 assertThat(response.id()).isEqualTo(1L);
 ```
 
-### ✅ Uso de AssertJ
+### Uso de AssertJ
 - Fluent assertions mais legíveis
 - `assertThat(list).hasSize(2)`
 - `isEqualByComparingTo()` para BigDecimal
 
-### ✅ Mocks Apropriados
+### Mocks Apropriados
 - Service: usa `@Mock` do repository
 - Controller: usa `@MockBean` do service
 
-### ✅ Isolamento de Testes
+### Isolamento de Testes
 - Cada teste é independente
 - `@BeforeEach` reseta estado
 - Sem side effects entre testes
 
-### ✅ DisplayName Descritivo
+### DisplayName Descritivo
 ```java
 @DisplayName("Deve criar orçamento com sucesso")
 ```
 
 ---
 
-## 📈 Métricas
+## Métricas
 
 ### Performance
-- Testes unitários (Service): < 2s
-- Testes de integração (Controller): < 5s
-- **Total (15 testes): < 7s**
+- Testes unitários (Service): < 3s
+- Testes de integração (Controller): < 6s
+- **Total (23 testes): < 9s**
 
 ### Cobertura
 - Focamos em **qualidade**, não quantidade
@@ -150,7 +186,7 @@ assertThat(response.id()).isEqualTo(1L);
 
 ---
 
-## 🐛 Debugging de Testes
+## Debugging de Testes
 
 ### Ver stack trace completo
 ```bash
@@ -169,7 +205,7 @@ mvnw package -DskipTests
 
 ---
 
-## 📚 Dependências de Teste
+## Dependências de Teste
 
 Todas incluídas via `spring-boot-starter-test`:
 
@@ -182,36 +218,37 @@ Todas incluídas via `spring-boot-starter-test`:
 ```
 
 **Inclui:**
-- ✅ JUnit 5 (testes)
-- ✅ Mockito (mocks)
-- ✅ AssertJ (assertions fluentes)
-- ✅ Spring Test + MockMvc (integração)
+-JUnit 5 (testes)
+-Mockito (mocks)
+-AssertJ (assertions fluentes)
+-Spring Test + MockMvc (integração)
 
 ---
 
-## 💡 Por que Apenas 15 Testes?
+## Por que Apenas 23 Testes?
 
 ### Pragmatismo > Cobertura Cega
 
 **Não testamos:**
-- ❌ **Entidades** - Cálculos simples (quantidade × valor) são verificados em code review
-- ❌ **Repositórios** - Spring Data JPA é framework maduro e testado
-- ❌ **Validações** - Bean Validation é framework maduro
-- ❌ **Getters/Setters** - Lombok/Records geram código confiável
+- **Entidades** - Cálculos simples (quantidade × valor) são verificados em code review
+- **Repositórios** - Spring Data JPA é framework maduro e testado
+- **Validações** - Bean Validation é framework maduro
+- **Getters/Setters** - Lombok/Records geram código confiável
 
 **Testamos:**
-- ✅ **Service** - Nossa lógica de negócio (conversões, regras)
-- ✅ **Controller** - Contrato de API (HTTP status, JSON, validações)
+-**Service** - Nossa lógica de negócio (conversões, regras, auditoria)
+-**Controller** - Contrato de API (HTTP status, JSON, validações)
+-**US02** - Funcionalidades de auditoria (histórico de alterações)
 
 ### Resultado
-- ✅ Manutenção mais fácil (menos código de teste para atualizar)
-- ✅ Build mais rápido (< 7s vs > 20s)
-- ✅ Foco em cenários reais de falha
-- ✅ Menos duplicação (não testamos o que o framework já testa)
+-Manutenção mais fácil (menos código de teste para atualizar)
+-Build mais rápido (< 9s vs > 30s com testes excessivos)
+-Foco em cenários reais de falha
+-Menos duplicação (não testamos o que o framework já testa)
 
 ---
 
-## 📖 Referências
+## Referências
 
 - [JUnit 5 User Guide](https://junit.org/junit5/docs/current/user-guide/)
 - [Mockito Documentation](https://javadoc.io/doc/org.mockito/mockito-core/latest/org/mockito/Mockito.html)
