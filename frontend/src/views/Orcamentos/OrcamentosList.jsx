@@ -11,10 +11,12 @@ import {
   TableRow,
   Chip,
   Button,
+  IconButton,
+  Tooltip,
   CircularProgress,
   Alert,
 } from "@mui/material";
-import { Add } from "@mui/icons-material";
+import { Add, Edit, Visibility } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useSnackbar } from "../../hooks/useSnackbar";
 import orcamentoService from "../../services/orcamentoService";
@@ -107,12 +109,13 @@ export default function OrcamentosList() {
               <TableCell sx={{ fontWeight: "bold" }}>Data</TableCell>
               <TableCell sx={{ fontWeight: "bold" }}>Valor Total</TableCell>
               <TableCell sx={{ fontWeight: "bold" }}>Status</TableCell>
+              <TableCell sx={{ fontWeight: "bold", width: "120px" }}>Ações</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {orcamentos.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={5} align="center" sx={{ py: 4 }}>
+                <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
                   <Typography color="text.secondary">
                     Nenhum orçamento cadastrado. Clique em "Novo Orçamento" para
                     começar.
@@ -121,12 +124,7 @@ export default function OrcamentosList() {
               </TableRow>
             ) : (
               orcamentos.map((orcamento) => (
-                <TableRow
-                  key={orcamento.id}
-                  hover
-                  sx={{ cursor: "pointer" }}
-                  onClick={() => navigate(`/orcamentos/${orcamento.id}`)}
-                >
+                <TableRow key={orcamento.id} hover>
                   <TableCell>{orcamento.cliente}</TableCell>
                   <TableCell>{orcamento.moveis}</TableCell>
                   <TableCell>{formatDate(orcamento.data)}</TableCell>
@@ -139,6 +137,28 @@ export default function OrcamentosList() {
                       color={STATUS_CORES[orcamento.status]}
                       size="small"
                     />
+                  </TableCell>
+                  <TableCell>
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                      <Tooltip title="Visualizar">
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={() => navigate(`/orcamentos/${orcamento.id}`)}
+                        >
+                          <Visibility fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                      <Tooltip title="Editar">
+                        <IconButton
+                          size="small"
+                          color="primary"
+                          onClick={() => navigate(`/orcamentos/${orcamento.id}/editar`)}
+                        >
+                          <Edit fontSize="small" />
+                        </IconButton>
+                      </Tooltip>
+                    </Box>
                   </TableCell>
                 </TableRow>
               ))

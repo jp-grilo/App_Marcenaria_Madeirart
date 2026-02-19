@@ -11,6 +11,28 @@ const breadcrumbNameMap = {
   "/configuracoes": "Configurações",
 };
 
+const getBreadcrumbLabel = (path, value, pathnames, index) => {
+  if (breadcrumbNameMap[path]) {
+    return breadcrumbNameMap[path];
+  }
+
+  if (pathnames[0] === "orcamentos") {
+    if (!isNaN(value)) {
+      const nextValue = pathnames[index + 1];
+      if (nextValue === "editar") {
+        return value;
+      }
+      return "Visualizar";
+    }
+
+    if (value === "editar") {
+      return "Editar";
+    }
+  }
+
+  return value;
+};
+
 export default function AppBreadcrumbs() {
   const location = useLocation();
   const pathnames = location.pathname.split("/").filter((x) => x);
@@ -35,7 +57,7 @@ export default function AppBreadcrumbs() {
       {pathnames.map((value, index) => {
         const last = index === pathnames.length - 1;
         const to = `/${pathnames.slice(0, index + 1).join("/")}`;
-        const label = breadcrumbNameMap[to] || value;
+        const label = getBreadcrumbLabel(to, value, pathnames, index);
 
         return last ? (
           <Typography key={to} color="text.primary" sx={{ fontWeight: 500 }}>
