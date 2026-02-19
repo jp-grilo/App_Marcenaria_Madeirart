@@ -11,10 +11,12 @@ import java.time.LocalDate;
  */
 @Builder
 public record ParcelaResponseDTO(
-    Long id,
-    Integer numeroParcela,
-    BigDecimal valor,
-    LocalDate dataVencimento,
-    LocalDate dataPagamento,
-    StatusParcela status
-) {}
+        Long id,
+        Long orcamentoId,
+        Integer numeroParcela,
+        BigDecimal valor,
+        LocalDate dataVencimento,
+        LocalDate dataPagamento,
+        StatusParcela status,
+        LocalDate createdAt) {
+}
