@@ -156,4 +156,70 @@ class ParcelaServiceTest {
         assertThat(resultado).isEmpty();
         verify(parcelaRepository).findByOrcamentoIdOrderByNumeroParcela(1L);
     }
+
+    @Test
+    @DisplayName("Deve atualizar parcelas pendentes com vencimento vencido para ATRASADO")
+    void deveAtualizarParcelasAtrasadas() {
+        Parcela parcela1 = Parcela.builder()
+                .id(1L)
+                .orcamento(orcamento)
+                .numeroParcela(1)
+                .valor(new BigDecimal("1000.00"))
+                .dataVencimento(LocalDate.now().minusDays(5))
+                .status(StatusParcela.PENDENTE)
+                .build();
+
+        Parcela parcela2 = Parcela.builder()
+                .id(2L)
+                .orcamento(orcamento)
+                .numeroParcela(2)
+                .valor(new BigDecimal("1000.00"))
+                .dataVencimento(LocalDate.now().minusDays(10))
+                .status(StatusParcela.PENDENTE)
+                .build();
+
+        List<Parcela> parcelasAtrasadas = List.of(parcela1, parcela2);
+        when(parcelaRepository.findByStatusAndDataVencimentoBefore(
+                eq(StatusParcela.PENDENTE), any(LocalDate.class)))
+                .thenReturn(parcelasAtrasadas);
+        when(parcelaRepository.saveAll(parcelasAtrasadas)).thenReturn(parcelasAtrasadas);
+
+        int quantidade = parcelaService.atualizarParcelasAtrasadas();
+
+        assertThat(quantidade).isEqualTo(2);
+        assertThat(parcela1.getStatus()).isEqualTo(StatusParcela.ATRASADO);
+        assertThat(parcela2.getStatus()).isEqualTo(StatusParcela.ATRASADO);
+        verify(parcelaRepository).findByStatusAndDataVencimentoBefore(
+                eq(StatusParcela.PENDENTE), any(LocalDate.class));
+        verify(parcelaRepository).saveAll(parcelasAtrasadas);
+    }
+
+    @Test
+    @DisplayName("Deve retornar zero quando não há parcelas atrasadas")
+    void deveRetornarZeroQuandoNaoHaParcelasAtrasadas() {
+        when(parcelaRepository.findByStatusAndDataVencimentoBefore(
+                eq(StatusParcela.PENDENTE), any(LocalDate.class)))
+                .thenReturn(List.of());
+
+        int quantidade = parcelaService.atualizarParcelasAtrasadas();
+
+        assertThat(quantidade).isEqualTo(0);
+        verify(parcelaRepository).findByStatusAndDataVencimentoBefore(
+                eq(StatusParcela.PENDENTE), any(LocalDate.class));
+        verify(parcelaRepository, never()).saveAll(any());
+    }
+
+    @Test
+    @DisplayName("Não deve atualizar parcelas pendentes com vencimento futuro")
+    void naoDeveAtualizarParcelasPendentesComVencimentoFuturo() {
+        // Parcelas com vencimento futuro não devem ser retornadas pela query
+        when(parcelaRepository.findByStatusAndDataVencimentoBefore(
+                eq(StatusParcela.PENDENTE), any(LocalDate.class)))
+                .thenReturn(List.of());
+
+        int quantidade = parcelaService.atualizarParcelasAtrasadas();
+
+        assertThat(quantidade).isEqualTo(0);
+        verify(parcelaRepository, never()).saveAll(any());
+    }
 }

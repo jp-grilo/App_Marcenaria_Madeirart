@@ -8,9 +8,9 @@
 | --------------- | ------------------------- | ------------- | ----------------- |
 | **Unit**        | `OrcamentoServiceTest`    | 17            | Service com mocks |
 | **Integration** | `OrcamentoControllerTest` | 16            | Endpoints REST    |
-| **Unit**        | `ParcelaServiceTest`      | 7             | Service com mocks |
+| **Unit**        | `ParcelaServiceTest`      | 10            | Service com mocks |
 | **Integration** | `ParcelaControllerTest`   | 9             | Endpoints REST    |
-| **TOTAL**       | **4 arquivos**            | **49 testes** |                   |
+| **TOTAL**       | **4 arquivos**            | **52 testes** |                   |
 
 ## Como Executar
 
@@ -152,9 +152,9 @@ void deveCriarOrcamento() throws Exception {
 
 ---
 
-### **Testes de Confirmação de Pagamentos - US04** (Novos)
+### **Testes de Confirmação de Pagamentos - US04**
 
-**Adicionados:** 16 testes (7 Service + 9 Controller)
+**Adicionados:** 19 testes (10 Service + 9 Controller)
 
 **Cobertura:**
 
@@ -167,6 +167,9 @@ void deveCriarOrcamento() throws Exception {
 - Lançar exceção ao confirmar parcela já paga
 - Lançar exceção ao confirmar parcela inexistente
 - Retornar lista vazia quando orçamento não tem parcelas
+- **Atualizar parcelas pendentes com vencimento vencido para ATRASADO**
+- **Retornar zero quando não há parcelas atrasadas**
+- **Não atualizar parcelas pendentes com vencimento futuro**
 
 **Controller (ParcelaControllerTest):**
 
@@ -194,6 +197,51 @@ void deveConfirmarPagamento() {
     assertThat(resultado.dataPagamento()).isEqualTo(LocalDate.now());
     verify(parcelaRepository).save(parcela);
 }
+```
+
+**Exemplo de teste de atualização automática:**
+
+```java
+@Test
+@DisplayName("Deve atualizar parcelas pendentes com vencimento vencido para ATRASADO")
+void deveAtualizarParcelasAtrasadas() {
+    Parcela parcela1 = Parcela.builder()
+            .dataVencimento(LocalDate.now().minusDays(5))
+            .status(StatusParcela.PENDENTE)
+            .build();
+
+    when(parcelaRepository.findByStatusAndDataVencimentoBefore(
+            eq(StatusParcela.PENDENTE), any(LocalDate.class)))
+            .thenReturn(List.of(parcela1));
+
+    int quantidade = parcelaService.atualizarParcelasAtrasadas();
+
+    assertThat(quantidade).isEqualTo(1);
+    assertThat(parcela1.getStatus()).isEqualTo(StatusParcela.ATRASADO);
+    verify(parcelaRepository).saveAll(any());
+}
+```
+
+---
+
+### **Rotina de Inicialização**
+
+**Componente:** `ParcelaStartupTask`
+
+**Funcionalidade:**
+
+- Executa automaticamente ao iniciar a aplicação (`@PostConstruct`)
+- Verifica todas as parcelas pendentes (`PENDENTE`)
+- Atualiza status para `ATRASADO` quando `dataVencimento < hoje`
+- Registra logs de execução e quantidade de parcelas atualizadas
+- Tratamento de exceções para não impedir a inicialização da aplicação
+
+**Exemplo de log:**
+
+```
+Iniciando verificação de parcelas atrasadas...
+Total de 3 parcela(s) atualizada(s) para status ATRASADO
+Verificação de parcelas atrasadas concluída. Total de parcelas atualizadas: 3
 ```
 
 ---

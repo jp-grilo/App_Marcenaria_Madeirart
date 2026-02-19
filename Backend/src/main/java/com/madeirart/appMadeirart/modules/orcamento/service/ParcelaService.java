@@ -6,6 +6,7 @@ import com.madeirart.appMadeirart.modules.orcamento.repository.ParcelaRepository
 import com.madeirart.appMadeirart.shared.enums.StatusParcela;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,6 +17,7 @@ import java.util.stream.Collectors;
 /**
  * Service para gerenciamento de parcelas
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class ParcelaService {
@@ -60,6 +62,28 @@ public class ParcelaService {
 
         Parcela saved = parcelaRepository.save(parcela);
         return convertToDTO(saved);
+    }
+
+    /**
+     * Atualiza o status de parcelas pendentes com vencimento vencido para ATRASADO
+     * 
+     * @return Quantidade de parcelas atualizadas
+     */
+    @Transactional
+    public int atualizarParcelasAtrasadas() {
+        List<Parcela> parcelasAtrasadas = parcelaRepository
+                .findByStatusAndDataVencimentoBefore(StatusParcela.PENDENTE, LocalDate.now());
+
+        if (parcelasAtrasadas.isEmpty()) {
+            log.info("Nenhuma parcela atrasada encontrada");
+            return 0;
+        }
+
+        parcelasAtrasadas.forEach(parcela -> parcela.setStatus(StatusParcela.ATRASADO));
+        parcelaRepository.saveAll(parcelasAtrasadas);
+
+        log.info("Total de {} parcela(s) atualizada(s) para status ATRASADO", parcelasAtrasadas.size());
+        return parcelasAtrasadas.size();
     }
 
     /**
