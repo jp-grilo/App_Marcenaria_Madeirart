@@ -15,13 +15,13 @@ export default function MainLayout({ children }) {
         component="main"
         sx={{
           flexGrow: 1,
-          ml: `${DRAWER_WIDTH}px`,
+        //   ml: `${DRAWER_WIDTH}px`,
           width: `calc(100% - ${DRAWER_WIDTH}px)`,
         }}
       >
         <Toolbar />
 
-        <Container maxWidth="xl" sx={{ mt: 4, mb: 4 }}>
+        <Container maxWidth="xl" sx={{ mb: 4 }}>
           <AppBreadcrumbs />
           {children}
         </Container>
