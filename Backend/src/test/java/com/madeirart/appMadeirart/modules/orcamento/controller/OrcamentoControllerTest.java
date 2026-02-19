@@ -2,6 +2,7 @@ package com.madeirart.appMadeirart.modules.orcamento.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.madeirart.appMadeirart.modules.orcamento.dto.ItemMaterialDTO;
+import com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoAuditoriaDTO;
 import com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoRequestDTO;
 import com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoResponseDTO;
 import com.madeirart.appMadeirart.modules.orcamento.service.OrcamentoService;
@@ -19,6 +20,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -175,5 +177,54 @@ class OrcamentoControllerTest {
     void deveDeletarOrcamento() throws Exception {
         mockMvc.perform(delete("/api/orcamentos/1"))
                 .andExpect(status().isNoContent());
+    }
+
+    @Test
+    @DisplayName("GET /api/orcamentos/{id}/historico - Deve buscar histórico de auditoria")
+    void deveBuscarHistorico() throws Exception {
+        OrcamentoAuditoriaDTO auditoria1 = OrcamentoAuditoriaDTO.builder()
+                .id(1L)
+                .orcamentoId(1L)
+                .snapshotJson("{\"id\":1,\"cliente\":\"João Silva\"}")
+                .dataAlteracao(LocalDateTime.now())
+                .descricaoAlteracao("Atualização de orçamento")
+                .build();
+
+        OrcamentoAuditoriaDTO auditoria2 = OrcamentoAuditoriaDTO.builder()
+                .id(2L)
+                .orcamentoId(1L)
+                .snapshotJson("{\"id\":1,\"cliente\":\"João Silva Atualizado\"}")
+                .dataAlteracao(LocalDateTime.now().plusHours(1))
+                .descricaoAlteracao("Atualização de orçamento")
+                .build();
+
+        when(orcamentoService.buscarHistorico(1L)).thenReturn(List.of(auditoria2, auditoria1));
+
+        mockMvc.perform(get("/api/orcamentos/1/historico"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].id").value(2))
+                .andExpect(jsonPath("$[1].id").value(1))
+                .andExpect(jsonPath("$[0].orcamentoId").value(1));
+    }
+
+    @Test
+    @DisplayName("GET /api/orcamentos/{id}/historico - Deve retornar 404 para orçamento inexistente")
+    void deveRetornar404AoBuscarHistoricoDeOrcamentoInexistente() throws Exception {
+        when(orcamentoService.buscarHistorico(999L))
+                .thenThrow(new EntityNotFoundException("Orçamento não encontrado"));
+
+        mockMvc.perform(get("/api/orcamentos/999/historico"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    @DisplayName("GET /api/orcamentos/{id}/historico - Deve retornar lista vazia para orçamento sem histórico")
+    void deveRetornarListaVaziaParaOrcamentoSemHistorico() throws Exception {
+        when(orcamentoService.buscarHistorico(1L)).thenReturn(List.of());
+
+        mockMvc.perform(get("/api/orcamentos/1/historico"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$").isArray())
+                .andExpect(jsonPath("$").isEmpty());
     }
 }

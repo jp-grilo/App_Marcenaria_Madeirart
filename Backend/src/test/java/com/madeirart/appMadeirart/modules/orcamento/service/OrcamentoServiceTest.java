@@ -1,9 +1,13 @@
 package com.madeirart.appMadeirart.modules.orcamento.service;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.madeirart.appMadeirart.modules.orcamento.dto.ItemMaterialDTO;
+import com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoAuditoriaDTO;
 import com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoRequestDTO;
 import com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoResponseDTO;
 import com.madeirart.appMadeirart.modules.orcamento.entity.Orcamento;
+import com.madeirart.appMadeirart.modules.orcamento.entity.OrcamentoAuditoria;
+import com.madeirart.appMadeirart.modules.orcamento.repository.OrcamentoAuditoriaRepository;
 import com.madeirart.appMadeirart.modules.orcamento.repository.OrcamentoRepository;
 import com.madeirart.appMadeirart.shared.enums.StatusOrcamento;
 
@@ -18,6 +22,7 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -35,6 +40,12 @@ class OrcamentoServiceTest {
 
     @Mock
     private OrcamentoRepository orcamentoRepository;
+
+    @Mock
+    private OrcamentoAuditoriaRepository auditoriaRepository;
+
+    @Mock
+    private ObjectMapper objectMapper;
 
     @InjectMocks
     private OrcamentoService orcamentoService;
@@ -149,5 +160,70 @@ class OrcamentoServiceTest {
         orcamentoService.deletarOrcamento(1L);
 
         verify(orcamentoRepository).deleteById(1L);
+    }
+
+    @Test
+    @DisplayName("Deve salvar auditoria ao atualizar orçamento")
+    void deveSalvarAuditoriaAoAtualizar() throws Exception {
+        when(orcamentoRepository.findById(1L)).thenReturn(Optional.of(orcamento));
+        when(orcamentoRepository.save(any(Orcamento.class))).thenReturn(orcamento);
+        when(objectMapper.writeValueAsString(any())).thenReturn("{\"id\":1}");
+        when(auditoriaRepository.save(any(OrcamentoAuditoria.class))).thenReturn(new OrcamentoAuditoria());
+
+        orcamentoService.atualizarOrcamento(1L, requestDTO);
+
+        verify(auditoriaRepository).save(any(OrcamentoAuditoria.class));
+    }
+
+    @Test
+    @DisplayName("Deve buscar histórico de auditoria")
+    void deveBuscarHistorico() {
+        OrcamentoAuditoria auditoria1 = OrcamentoAuditoria.builder()
+                .id(1L)
+                .orcamentoId(1L)
+                .snapshotJson("{\"id\":1,\"cliente\":\"João Silva\"}")
+                .dataAlteracao(LocalDateTime.now())
+                .descricaoAlteracao("Atualização de orçamento")
+                .build();
+
+        OrcamentoAuditoria auditoria2 = OrcamentoAuditoria.builder()
+                .id(2L)
+                .orcamentoId(1L)
+                .snapshotJson("{\"id\":1,\"cliente\":\"João Silva Atualizado\"}")
+                .dataAlteracao(LocalDateTime.now().plusHours(1))
+                .descricaoAlteracao("Atualização de orçamento")
+                .build();
+
+        when(orcamentoRepository.existsById(1L)).thenReturn(true);
+        when(auditoriaRepository.findByOrcamentoIdOrderByDataAlteracaoDesc(1L))
+                .thenReturn(List.of(auditoria2, auditoria1));
+
+        List<OrcamentoAuditoriaDTO> historico = orcamentoService.buscarHistorico(1L);
+
+        assertThat(historico).hasSize(2);
+        assertThat(historico.get(0).id()).isEqualTo(2L);
+        assertThat(historico.get(1).id()).isEqualTo(1L);
+        verify(auditoriaRepository).findByOrcamentoIdOrderByDataAlteracaoDesc(1L);
+    }
+
+    @Test
+    @DisplayName("Deve lançar exceção ao buscar histórico de orçamento inexistente")
+    void deveLancarExcecaoAoBuscarHistoricoDeOrcamentoInexistente() {
+        when(orcamentoRepository.existsById(999L)).thenReturn(false);
+
+        assertThatThrownBy(() -> orcamentoService.buscarHistorico(999L))
+                .isInstanceOf(EntityNotFoundException.class);
+    }
+
+    @Test
+    @DisplayName("Deve retornar histórico vazio para orçamento sem alterações")
+    void deveRetornarHistoricoVazio() {
+        when(orcamentoRepository.existsById(1L)).thenReturn(true);
+        when(auditoriaRepository.findByOrcamentoIdOrderByDataAlteracaoDesc(1L))
+                .thenReturn(List.of());
+
+        List<OrcamentoAuditoriaDTO> historico = orcamentoService.buscarHistorico(1L);
+
+        assertThat(historico).isEmpty();
     }
 }
