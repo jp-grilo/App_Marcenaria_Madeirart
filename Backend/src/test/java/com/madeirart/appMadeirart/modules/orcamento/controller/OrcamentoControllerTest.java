@@ -1,10 +1,12 @@
 package com.madeirart.appMadeirart.modules.orcamento.controller;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.madeirart.appMadeirart.modules.orcamento.dto.IniciarProducaoDTO;
 import com.madeirart.appMadeirart.modules.orcamento.dto.ItemMaterialDTO;
 import com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoAuditoriaDTO;
 import com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoRequestDTO;
 import com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoResponseDTO;
+import com.madeirart.appMadeirart.modules.orcamento.dto.ParcelaDTO;
 import com.madeirart.appMadeirart.modules.orcamento.service.OrcamentoService;
 import com.madeirart.appMadeirart.shared.enums.StatusOrcamento;
 
@@ -223,5 +225,115 @@ class OrcamentoControllerTest {
                                 .andExpect(status().isOk())
                                 .andExpect(jsonPath("$").isArray())
                                 .andExpect(jsonPath("$").isEmpty());
+        }
+
+        @Test
+        @DisplayName("PATCH /api/orcamentos/{id}/iniciar - Deve iniciar produção")
+        void deveIniciarProducao() throws Exception {
+                ParcelaDTO parcela1 = new ParcelaDTO(new BigDecimal("500.00"), LocalDate.now().plusDays(30));
+                ParcelaDTO parcela2 = new ParcelaDTO(new BigDecimal("700.00"), LocalDate.now().plusDays(60));
+
+                IniciarProducaoDTO dto = new IniciarProducaoDTO(
+                                new BigDecimal("1000.00"),
+                                LocalDate.now(),
+                                List.of(parcela1, parcela2));
+
+                OrcamentoResponseDTO responseIniciado = OrcamentoResponseDTO.builder()
+                                .id(1L)
+                                .cliente("João Silva")
+                                .moveis("Armário planejado")
+                                .status(StatusOrcamento.INICIADA)
+                                .valorTotal(new BigDecimal("2200.00"))
+                                .build();
+
+                when(orcamentoService.iniciarProducao(eq(1L), any(IniciarProducaoDTO.class)))
+                                .thenReturn(responseIniciado);
+
+                mockMvc.perform(patch("/api/orcamentos/1/iniciar")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(dto)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.id").value(1))
+                                .andExpect(jsonPath("$.status").value("INICIADA"));
+        }
+
+        @Test
+        @DisplayName("PATCH /api/orcamentos/{id}/iniciar - Deve iniciar produção com pagamento integral")
+        void deveIniciarProducaoComPagamentoIntegral() throws Exception {
+                IniciarProducaoDTO dto = new IniciarProducaoDTO(
+                                new BigDecimal("2200.00"),
+                                LocalDate.now(),
+                                List.of());  // sem parcelas
+
+                OrcamentoResponseDTO responseIniciado = OrcamentoResponseDTO.builder()
+                                .id(1L)
+                                .cliente("João Silva")
+                                .moveis("Armário planejado")
+                                .status(StatusOrcamento.INICIADA)
+                                .valorTotal(new BigDecimal("2200.00"))
+                                .build();
+
+                when(orcamentoService.iniciarProducao(eq(1L), any(IniciarProducaoDTO.class)))
+                                .thenReturn(responseIniciado);
+
+                mockMvc.perform(patch("/api/orcamentos/1/iniciar")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(dto)))
+                                .andExpect(status().isOk())
+                                .andExpect(jsonPath("$.id").value(1))
+                                .andExpect(jsonPath("$.status").value("INICIADA"));
+        }
+
+        @Test
+        @DisplayName("PATCH /api/orcamentos/{id}/iniciar - Deve retornar 404 para orçamento inexistente")
+        void deveRetornar404AoIniciarProducaoDeOrcamentoInexistente() throws Exception {
+                IniciarProducaoDTO dto = new IniciarProducaoDTO(
+                                new BigDecimal("1000.00"),
+                                LocalDate.now(),
+                                List.of());
+
+                when(orcamentoService.iniciarProducao(eq(999L), any(IniciarProducaoDTO.class)))
+                                .thenThrow(new EntityNotFoundException("Orçamento não encontrado"));
+
+                mockMvc.perform(patch("/api/orcamentos/999/iniciar")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(dto)))
+                                .andExpect(status().isNotFound());
+        }
+
+        @Test
+        @DisplayName("PATCH /api/orcamentos/{id}/iniciar - Deve retornar 400 para status inválido")
+        void deveRetornar400AoIniciarProducaoComStatusInvalido() throws Exception {
+                IniciarProducaoDTO dto = new IniciarProducaoDTO(
+                                new BigDecimal("1000.00"),
+                                LocalDate.now(),
+                                List.of());
+
+                when(orcamentoService.iniciarProducao(eq(1L), any(IniciarProducaoDTO.class)))
+                                .thenThrow(new IllegalStateException("Status deve ser AGUARDANDO"));
+
+                mockMvc.perform(patch("/api/orcamentos/1/iniciar")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(dto)))
+                                .andExpect(status().isBadRequest());
+        }
+
+        @Test
+        @DisplayName("PATCH /api/orcamentos/{id}/iniciar - Deve retornar 400 quando soma não bate")
+        void deveRetornar400QuandoSomaParcelasNaoBate() throws Exception {
+                ParcelaDTO parcela1 = new ParcelaDTO(new BigDecimal("500.00"), LocalDate.now().plusDays(30));
+
+                IniciarProducaoDTO dto = new IniciarProducaoDTO(
+                                new BigDecimal("500.00"),  // Total incorreto
+                                LocalDate.now(),
+                                List.of(parcela1));
+
+                when(orcamentoService.iniciarProducao(eq(1L), any(IniciarProducaoDTO.class)))
+                                .thenThrow(new IllegalArgumentException("Soma não corresponde ao valor total"));
+
+                mockMvc.perform(patch("/api/orcamentos/1/iniciar")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(dto)))
+                                .andExpect(status().isBadRequest());
         }
 }

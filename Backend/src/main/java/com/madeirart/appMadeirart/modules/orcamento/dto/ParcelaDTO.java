@@ -10,10 +10,6 @@ import java.time.LocalDate;
  * DTO para dados de uma parcela no plano de parcelamento
  */
 public record ParcelaDTO(
-    @NotNull(message = "Número da parcela é obrigatório")
-    @Positive(message = "Número da parcela deve ser positivo")
-    Integer numeroParcela,
-
     @NotNull(message = "Valor da parcela é obrigatório")
     @Positive(message = "Valor da parcela deve ser positivo")
     BigDecimal valor,
