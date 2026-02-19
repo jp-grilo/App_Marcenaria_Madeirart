@@ -22,7 +22,7 @@ import { useSnackbar } from "../../hooks/useSnackbar";
 import orcamentoService from "../../services/orcamentoService";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import { STATUS_LABELS, STATUS_CORES } from "../../utils/constants";
-import IniciarProducaoDialog from "./IniciarProducaoDialog";
+import IniciarProducaoDialog from "./dialogs/IniciarProducaoDialog";
 
 export default function OrcamentosList() {
   const navigate = useNavigate();

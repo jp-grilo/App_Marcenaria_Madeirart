@@ -8,7 +8,7 @@ import {
   Stack,
 } from "@mui/material";
 import { CheckCircle } from "@mui/icons-material";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency } from "../../../utils/formatters";
 
 export default function ParcelasList({
   parcelas,

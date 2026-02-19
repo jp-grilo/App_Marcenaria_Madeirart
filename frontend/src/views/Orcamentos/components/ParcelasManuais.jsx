@@ -7,7 +7,7 @@ import {
   Alert,
 } from "@mui/material";
 import { Add, Delete } from "@mui/icons-material";
-import { formatCurrency } from "../../utils/formatters";
+import { formatCurrency } from "../../../utils/formatters";
 
 export default function ParcelasManuais({
   parcelas,

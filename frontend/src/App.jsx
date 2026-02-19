@@ -4,9 +4,11 @@ import CssBaseline from "@mui/material/CssBaseline";
 import SnackbarProvider from "./components/SnackbarProvider";
 import MainLayout from "./components/Layout/MainLayout";
 import Dashboard from "./views/Dashboard/Dashboard";
-import OrcamentosList from "./views/Orcamentos/OrcamentosList";
-import OrcamentoForm from "./views/Orcamentos/OrcamentoForm";
-import OrcamentoDetalhes from "./views/Orcamentos/OrcamentoDetalhes";
+import {
+  OrcamentosList,
+  OrcamentoForm,
+  OrcamentoDetalhes,
+} from "./views/Orcamentos";
 
 const theme = createTheme({
   palette: {

@@ -332,7 +332,7 @@ export default function OrcamentoForm() {
                 name="custosExtras"
                 value={formData.custosExtras}
                 onChange={handleChange}
-                inputProps={{ step: "0.1", min: "0" }}
+                inputProps={{ step: "10", min: "0" }}
                 helperText="Valores adicionais"
               />
             </Grid2>
@@ -345,7 +345,7 @@ export default function OrcamentoForm() {
                 name="cpc"
                 value={formData.cpc}
                 onChange={handleChange}
-                inputProps={{ step: "0.1", min: "0" }}
+                inputProps={{ step: "10", min: "0" }}
                 helperText="Cola, parafuso, carreto"
               />
             </Grid2>
