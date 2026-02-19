@@ -268,6 +268,7 @@ export default function IniciarProducaoDialog({
               <ParcelasManuais
                 parcelas={parcelas}
                 onParcelasChange={setParcelas}
+                valorRestante={valorRestante}
               />
             )}
           </Box>
