@@ -12,22 +12,23 @@ import java.util.List;
  */
 @Builder
 public record OrcamentoResponseDTO(
-    Long id,
-    String cliente,
-    String moveis,
-    LocalDate data,
-    LocalDate previsaoEntrega,
-    BigDecimal fatorMaoDeObra,
-    BigDecimal custosExtras,
-    BigDecimal cpc,
-    StatusOrcamento status,
-    List<ItemMaterialDTO> itens,
-    
-    // Campos calculados
-    BigDecimal subtotalMateriais,
-    BigDecimal valorMaoDeObra,
-    BigDecimal valorTotal,
-    
-    LocalDate createdAt,
-    LocalDate updatedAt
-) {}
+        Long id,
+        String cliente,
+        String moveis,
+        LocalDate data,
+        LocalDate previsaoEntrega,
+        BigDecimal fatorMaoDeObra,
+        BigDecimal custosExtras,
+        BigDecimal cpc,
+        StatusOrcamento status,
+        List<ItemMaterialDTO> itens,
+
+        BigDecimal subtotalMateriais,
+        BigDecimal valorMaoDeObra,
+        BigDecimal valorTotal,
+
+        StatusRecebimentoDTO statusRecebimento,
+
+        LocalDate createdAt,
+        LocalDate updatedAt) {
+}

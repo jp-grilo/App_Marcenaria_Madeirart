@@ -6,6 +6,8 @@ import com.madeirart.appMadeirart.modules.orcamento.dto.IniciarProducaoDTO;
 import com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoAuditoriaDTO;
 import com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoRequestDTO;
 import com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoResponseDTO;
+import com.madeirart.appMadeirart.modules.orcamento.dto.ParcelaResponseDTO;
+import com.madeirart.appMadeirart.modules.orcamento.dto.StatusRecebimentoDTO;
 import com.madeirart.appMadeirart.modules.orcamento.entity.ItemMaterial;
 import com.madeirart.appMadeirart.modules.orcamento.entity.Orcamento;
 import com.madeirart.appMadeirart.modules.orcamento.entity.OrcamentoAuditoria;
@@ -14,12 +16,14 @@ import com.madeirart.appMadeirart.modules.orcamento.repository.OrcamentoAuditori
 import com.madeirart.appMadeirart.modules.orcamento.repository.OrcamentoRepository;
 import com.madeirart.appMadeirart.modules.orcamento.repository.ParcelaRepository;
 import com.madeirart.appMadeirart.shared.enums.StatusOrcamento;
+import com.madeirart.appMadeirart.shared.enums.StatusParcela;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -159,6 +163,9 @@ public class OrcamentoService {
                         item.calcularSubtotal()))
                 .collect(Collectors.toList());
 
+        BigDecimal valorTotal = orcamento.calcularValorTotal();
+        StatusRecebimentoDTO statusRecebimento = calcularStatusRecebimento(orcamento.getId(), valorTotal);
+
         return OrcamentoResponseDTO.builder()
                 .id(orcamento.getId())
                 .cliente(orcamento.getCliente())
@@ -172,7 +179,8 @@ public class OrcamentoService {
                 .itens(itensDTO)
                 .subtotalMateriais(orcamento.calcularSubtotalMateriais())
                 .valorMaoDeObra(orcamento.calcularValorMaoDeObra())
-                .valorTotal(orcamento.calcularValorTotal())
+                .valorTotal(valorTotal)
+                .statusRecebimento(statusRecebimento)
                 .createdAt(orcamento.getCreatedAt())
                 .updatedAt(orcamento.getUpdatedAt())
                 .build();
@@ -288,6 +296,57 @@ public class OrcamentoService {
                 .snapshotJson(auditoria.getSnapshotJson())
                 .dataAlteracao(auditoria.getDataAlteracao())
                 .descricaoAlteracao(auditoria.getDescricaoAlteracao())
+                .build();
+    }
+
+    /**
+     * Calcula o status de recebimento de um orçamento
+     * Retorna informações sobre parcelas pagas e pendentes
+     */
+    private StatusRecebimentoDTO calcularStatusRecebimento(Long orcamentoId, BigDecimal valorTotalOrcamento) {
+        List<Parcela> parcelas = parcelaRepository.findByOrcamentoIdOrderByNumeroParcela(orcamentoId);
+
+        List<ParcelaResponseDTO> parcelasDTO = parcelas.stream()
+                .map(this::convertParcelaToDTO)
+                .collect(Collectors.toList());
+
+        BigDecimal totalJaConfirmado = parcelas.stream()
+                .filter(p -> p.getStatus() == StatusParcela.PAGO)
+                .map(Parcela::getValor)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        BigDecimal totalPendente = valorTotalOrcamento.subtract(totalJaConfirmado);
+
+        Double percentualRecebido = 0.0;
+        if (valorTotalOrcamento.compareTo(BigDecimal.ZERO) > 0) {
+            percentualRecebido = totalJaConfirmado
+                    .divide(valorTotalOrcamento, 4, RoundingMode.HALF_UP)
+                    .multiply(new BigDecimal("100"))
+                    .doubleValue();
+        }
+
+        return StatusRecebimentoDTO.builder()
+                .valorTotalOrcamento(valorTotalOrcamento)
+                .totalJaConfirmado(totalJaConfirmado)
+                .totalPendente(totalPendente)
+                .percentualRecebido(percentualRecebido)
+                .parcelas(parcelasDTO)
+                .build();
+    }
+
+    /**
+     * Converte entidade Parcela para ParcelaResponseDTO
+     */
+    private ParcelaResponseDTO convertParcelaToDTO(Parcela parcela) {
+        return ParcelaResponseDTO.builder()
+                .id(parcela.getId())
+                .orcamentoId(parcela.getOrcamento().getId())
+                .numeroParcela(parcela.getNumeroParcela())
+                .valor(parcela.getValor())
+                .dataVencimento(parcela.getDataVencimento())
+                .dataPagamento(parcela.getDataPagamento())
+                .status(parcela.getStatus())
+                .createdAt(parcela.getCreatedAt())
                 .build();
     }
 }
