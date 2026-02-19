@@ -60,8 +60,7 @@ class OrcamentoServiceTest {
                 new BigDecimal("4"),
                 "Placa MDF 15mm",
                 new BigDecimal("180.00"),
-                null
-        );
+                null);
 
         requestDTO = new OrcamentoRequestDTO(
                 "João Silva",
@@ -71,8 +70,7 @@ class OrcamentoServiceTest {
                 new BigDecimal("1.5"),
                 new BigDecimal("250.00"),
                 new BigDecimal("150.00"),
-                List.of(item)
-        );
+                List.of(item));
 
         orcamento = new Orcamento();
         orcamento.setId(1L);
