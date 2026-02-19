@@ -14,9 +14,9 @@ import {
   ToggleButton,
 } from "@mui/material";
 import { AutoAwesome, Edit } from "@mui/icons-material";
-import { formatCurrency } from "../../utils/formatters";
-import ParcelasAutomaticas from "./ParcelasAutomaticas";
-import ParcelasManuais from "./ParcelasManuais";
+import { formatCurrency } from "../../../utils/formatters";
+import ParcelasAutomaticas from "../components/ParcelasAutomaticas";
+import ParcelasManuais from "../components/ParcelasManuais";
 
 export default function IniciarProducaoDialog({
   open,

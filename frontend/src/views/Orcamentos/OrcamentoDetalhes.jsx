@@ -25,8 +25,8 @@ import orcamentoService from "../../services/orcamentoService";
 import parcelaService from "../../services/parcelaService";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import { STATUS_LABELS, STATUS_CORES } from "../../utils/constants";
-import IniciarProducaoDialog from "./IniciarProducaoDialog";
-import ParcelasList from "./ParcelasList";
+import IniciarProducaoDialog from "./dialogs/IniciarProducaoDialog";
+import ParcelasList from "./components/ParcelasList";
 import StatusRecebimentoCard from "../../components/StatusRecebimentoCard";
 
 export default function OrcamentoDetalhes() {
