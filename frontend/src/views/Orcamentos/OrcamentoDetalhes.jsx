@@ -268,85 +268,93 @@ export default function OrcamentoDetalhes() {
               Informações Gerais
             </Typography>
 
-            <Grid2 container spacing={3}>
-              <Grid2 item xs={12} md={6}>
-                <Typography variant="caption" color="text.secondary">
-                  Cliente
-                </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  {orcamento.cliente}
-                </Typography>
-              </Grid2>
+            {/* Primeiro grupo de informações */}
+            <Box sx={{ mb: 3 }}>
+              <Grid2 container spacing={3}>
+                <Grid2 item xs={12} md={6}>
+                  <Typography variant="caption" color="text.secondary">
+                    Cliente
+                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                    {orcamento.cliente}
+                  </Typography>
+                </Grid2>
 
-              <Grid2 item xs={12} md={6}>
-                <Typography variant="caption" color="text.secondary">
-                  Status
-                </Typography>
-                <Box sx={{ mt: 0.5 }}>
-                  <Chip
-                    label={STATUS_LABELS[orcamento.status]}
-                    color={STATUS_CORES[orcamento.status]}
-                    size="small"
-                  />
-                </Box>
-              </Grid2>
+                <Grid2 item xs={12} md={6}>
+                  <Typography variant="caption" color="text.secondary">
+                    Status
+                  </Typography>
+                  <Box sx={{ mt: 0.5 }}>
+                    <Chip
+                      label={STATUS_LABELS[orcamento.status]}
+                      color={STATUS_CORES[orcamento.status]}
+                      size="small"
+                    />
+                  </Box>
+                </Grid2>
 
-              <Grid2 item xs={12}>
-                <Typography variant="caption" color="text.secondary">
-                  Móveis / Descrição
-                </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  {orcamento.moveis}
-                </Typography>
-              </Grid2>
+                <Grid2 item xs={12}>
+                  <Typography variant="caption" color="text.secondary">
+                    Móveis / Descrição
+                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                    {orcamento.moveis}
+                  </Typography>
+                </Grid2>
 
-              <Grid2 item xs={12} md={6}>
-                <Typography variant="caption" color="text.secondary">
-                  Data
-                </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  {formatDate(orcamento.data)}
-                </Typography>
-              </Grid2>
+                <Grid2 item xs={12} md={6}>
+                  <Typography variant="caption" color="text.secondary">
+                    Data
+                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                    {formatDate(orcamento.data)}
+                  </Typography>
+                </Grid2>
 
-              <Grid2 item xs={12} md={6}>
-                <Typography variant="caption" color="text.secondary">
-                  Previsão de Entrega
-                </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  {orcamento.previsaoEntrega
-                    ? formatDate(orcamento.previsaoEntrega)
-                    : "-"}
-                </Typography>
+                <Grid2 item xs={12} md={6}>
+                  <Typography variant="caption" color="text.secondary">
+                    Previsão de Entrega
+                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                    {orcamento.previsaoEntrega
+                      ? formatDate(orcamento.previsaoEntrega)
+                      : "-"}
+                  </Typography>
+                </Grid2>
               </Grid2>
+            </Box>
 
-              <Grid2 item xs={12} md={4}>
-                <Typography variant="caption" color="text.secondary">
-                  Fator de Mão de Obra
-                </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  {orcamento.fatorMaoDeObra}
-                </Typography>
-              </Grid2>
+            {/* Segundo grupo - Informações Financeiras */}
+            <Box>
+              <Grid2 container spacing={3}>
+                <Grid2 item xs={12} md={4}>
+                  <Typography variant="caption" color="text.secondary">
+                    Fator de Mão de Obra
+                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                    {orcamento.fatorMaoDeObra}
+                  </Typography>
+                </Grid2>
 
-              <Grid2 item xs={12} md={4}>
-                <Typography variant="caption" color="text.secondary">
-                  Custos Extras
-                </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  {formatCurrency(orcamento.custosExtras)}
-                </Typography>
-              </Grid2>
+                <Grid2 item xs={12} md={4}>
+                  <Typography variant="caption" color="text.secondary">
+                    Custos Extras
+                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                    {formatCurrency(orcamento.custosExtras)}
+                  </Typography>
+                </Grid2>
 
-              <Grid2 item xs={12} md={4}>
-                <Typography variant="caption" color="text.secondary">
-                  CPC
-                </Typography>
-                <Typography variant="body1" sx={{ fontWeight: 500 }}>
-                  {formatCurrency(orcamento.cpc)}
-                </Typography>
+                <Grid2 item xs={12} md={4}>
+                  <Typography variant="caption" color="text.secondary">
+                    CPC
+                  </Typography>
+                  <Typography variant="body1" sx={{ fontWeight: 500 }}>
+                    {formatCurrency(orcamento.cpc)}
+                  </Typography>
+                </Grid2>
               </Grid2>
-            </Grid2>
+            </Box>
           </Paper>
 
           <Paper sx={{ p: 3, mb: 3 }}>
