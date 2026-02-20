@@ -28,6 +28,21 @@ export const STATUS_PARCELA = {
   PAGO: "PAGO",
 };
 
+export const STATUS_CUSTO = {
+  PENDENTE: "PENDENTE",
+  PAGO: "PAGO",
+};
+
+export const STATUS_CUSTO_LABELS = {
+  PENDENTE: "Pendente",
+  PAGO: "Pago",
+};
+
+export const STATUS_CUSTO_CORES = {
+  PENDENTE: "warning",
+  PAGO: "success",
+};
+
 export const FORMAS_PAGAMENTO = [
   "PIX",
   "Dinheiro",
