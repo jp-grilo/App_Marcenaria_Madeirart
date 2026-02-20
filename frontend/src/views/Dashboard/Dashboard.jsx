@@ -1,63 +1,20 @@
 import { useState, useEffect } from "react";
 import { Box, Typography, Grid2, Paper, Alert } from "@mui/material";
-import {
-  Assignment,
-  TrendingUp,
-  CalendarMonth,
-  AttachMoney,
-} from "@mui/icons-material";
 import dashboardService from "../../services/dashboardService";
 import CardResumoOrcamentos from "./components/CardResumoOrcamentos";
-
-const StatCard = ({ title, value, icon, color }) => (
-  <Paper
-    sx={{
-      p: 3,
-      display: "flex",
-      flexDirection: "column",
-      height: 140,
-      position: "relative",
-      overflow: "hidden",
-    }}
-  >
-    <Box
-      sx={{
-        display: "flex",
-        justifyContent: "space-between",
-        alignItems: "flex-start",
-      }}
-    >
-      <Box>
-        <Typography color="text.secondary" variant="subtitle2" gutterBottom>
-          {title}
-        </Typography>
-        <Typography variant="h4" sx={{ fontWeight: "bold", color }}>
-          {value}
-        </Typography>
-      </Box>
-      <Box
-        sx={{
-          backgroundColor: `${color}20`,
-          borderRadius: 2,
-          p: 1.5,
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        {icon}
-      </Box>
-    </Box>
-  </Paper>
-);
+import CardProjecaoFinanceira from "./components/CardProjecaoFinanceira";
 
 export default function Dashboard() {
   const [resumo, setResumo] = useState(null);
+  const [projecao, setProjecao] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadingProjecao, setLoadingProjecao] = useState(true);
   const [error, setError] = useState(null);
+  const [errorProjecao, setErrorProjecao] = useState(null);
 
   useEffect(() => {
     carregarResumo();
+    carregarProjecao();
   }, []);
 
   const carregarResumo = async () => {
@@ -74,13 +31,33 @@ export default function Dashboard() {
     }
   };
 
+  const carregarProjecao = async () => {
+    try {
+      setLoadingProjecao(true);
+      setErrorProjecao(null);
+
+      // Obter mês e ano atuais
+      const hoje = new Date();
+      const mes = hoje.getMonth() + 1; // getMonth() retorna 0-11
+      const ano = hoje.getFullYear();
+
+      const dados = await dashboardService.getProjecao(mes, ano);
+      setProjecao(dados);
+    } catch (err) {
+      console.error("Erro ao carregar projeção:", err);
+      setErrorProjecao(err);
+    } finally {
+      setLoadingProjecao(false);
+    }
+  };
+
   return (
     <Box>
       <Typography variant="h4" sx={{ mb: 4, fontWeight: 600 }}>
         Bem-vindo ao Madeirart
       </Typography>
 
-      {error && !loading && (
+      {(error || errorProjecao) && !loading && !loadingProjecao && (
         <Alert severity="error" sx={{ mb: 3 }}>
           Erro ao carregar dados do dashboard. Verifique se o backend está
           rodando.
@@ -97,27 +74,25 @@ export default function Dashboard() {
           />
         </Grid2>
 
-        {/* Cards temporários - serão substituídos */}
-        <Grid2 size={{ xs: 12, md: 8 }}>
-          <Grid2 container spacing={3}>
-            <Grid2 size={{ xs: 12, sm: 6 }}>
-              <StatCard
-                title="Próximos Vencimentos"
-                value="Em breve"
-                icon={<CalendarMonth sx={{ fontSize: 40, color: "#ed6c02" }} />}
-                color="#ed6c02"
-              />
-            </Grid2>
+        {/* Card de Projeção Financeira */}
+        <Grid2 size={{ xs: 12, md: 4 }}>
+          <CardProjecaoFinanceira
+            projecao={projecao}
+            loading={loadingProjecao}
+            error={errorProjecao}
+          />
+        </Grid2>
 
-            <Grid2 size={{ xs: 12, sm: 6 }}>
-              <StatCard
-                title="Receita do Mês"
-                value="Em breve"
-                icon={<AttachMoney sx={{ fontSize: 40, color: "#2e7d32" }} />}
-                color="#2e7d32"
-              />
-            </Grid2>
-          </Grid2>
+        {/* Cards temporários - serão substituídos pelo calendário */}
+        <Grid2 size={{ xs: 12, md: 4 }}>
+          <Paper sx={{ p: 3, height: "100%" }}>
+            <Typography variant="h6" sx={{ mb: 2 }}>
+              Calendário Financeiro
+            </Typography>
+            <Typography color="text.secondary">
+              Em breve: calendário com indicadores de entradas e saídas
+            </Typography>
+          </Paper>
         </Grid2>
       </Grid2>
     </Box>
