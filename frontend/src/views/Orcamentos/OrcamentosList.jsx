@@ -15,8 +15,19 @@ import {
   Tooltip,
   CircularProgress,
   Alert,
+  TextField,
+  FormControlLabel,
+  Checkbox,
+  FormGroup,
+  Grid2,
 } from "@mui/material";
-import { Add, Edit, Visibility, PlayArrow } from "@mui/icons-material";
+import {
+  Add,
+  Edit,
+  Visibility,
+  PlayArrow,
+  FilterList,
+} from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useSnackbar } from "../../hooks/useSnackbar";
 import orcamentoService from "../../services/orcamentoService";
@@ -34,6 +45,14 @@ export default function OrcamentosList() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [orcamentoSelecionado, setOrcamentoSelecionado] = useState(null);
   const [dialogStatusOpen, setDialogStatusOpen] = useState(false);
+
+  const [filtro, setFiltro] = useState({
+    nomeCliente: "",
+    statusAguardando: true,
+    statusIniciada: true,
+    statusFinalizada: true,
+    statusCancelada: true,
+  });
 
   useEffect(() => {
     const carregarOrcamentos = async () => {
@@ -91,6 +110,42 @@ export default function OrcamentosList() {
       showError("Erro ao alterar status do orçamento");
     }
   };
+
+  const limparFiltros = () => {
+    setFiltro({
+      nomeCliente: "",
+      statusAguardando: true,
+      statusIniciada: true,
+      statusFinalizada: true,
+      statusCancelada: true,
+    });
+  };
+
+  const orcamentosFiltrados = orcamentos.filter((orcamento) => {
+    if (
+      filtro.nomeCliente &&
+      !orcamento.cliente
+        .toLowerCase()
+        .includes(filtro.nomeCliente.toLowerCase())
+    ) {
+      return false;
+    }
+
+    const statusSelecionados = [];
+    if (filtro.statusAguardando) statusSelecionados.push("AGUARDANDO");
+    if (filtro.statusIniciada) statusSelecionados.push("INICIADA");
+    if (filtro.statusFinalizada) statusSelecionados.push("FINALIZADA");
+    if (filtro.statusCancelada) statusSelecionados.push("CANCELADA");
+
+    if (
+      statusSelecionados.length > 0 &&
+      !statusSelecionados.includes(orcamento.status)
+    ) {
+      return false;
+    }
+
+    return true;
+  });
 
   const handleIniciarProducao = async (dados) => {
     try {
@@ -182,6 +237,132 @@ export default function OrcamentosList() {
         </Alert>
       )}
 
+      {/* Filtros */}
+      <Paper sx={{ p: 2, mb: 3, backgroundColor: "#f5f5f5" }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            mb: 2,
+            gap: 1,
+          }}
+        >
+          <FilterList />
+          <Typography variant="h6">Filtros</Typography>
+        </Box>
+
+        <Grid2 container spacing={3}>
+          {/* Nome do Cliente */}
+          <Grid2 size={{ xs: 12, sm: 6, md: 4 }}>
+            <Typography
+              variant="subtitle2"
+              sx={{ mb: 1, fontWeight: 600, paddingBottom: 1.5 }}
+            >
+              Nome do Cliente
+            </Typography>
+            <TextField
+              fullWidth
+              size="small"
+              label="Buscar por Cliente"
+              placeholder="Digite o nome do cliente..."
+              value={filtro.nomeCliente}
+              onChange={(e) =>
+                setFiltro({
+                  ...filtro,
+                  nomeCliente: e.target.value,
+                })
+              }
+            />
+          </Grid2>
+
+          {/* Status */}
+          <Grid2 size={{ xs: 12, sm: 6, md: 5 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+              Status
+            </Typography>
+            <Box sx={{ display: "flex", gap: 3 }}>
+              <FormGroup>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={filtro.statusAguardando}
+                      onChange={(e) =>
+                        setFiltro({
+                          ...filtro,
+                          statusAguardando: e.target.checked,
+                        })
+                      }
+                    />
+                  }
+                  label="Aguardando"
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={filtro.statusIniciada}
+                      onChange={(e) =>
+                        setFiltro({
+                          ...filtro,
+                          statusIniciada: e.target.checked,
+                        })
+                      }
+                    />
+                  }
+                  label="Iniciada"
+                />
+              </FormGroup>
+              <FormGroup>
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={filtro.statusFinalizada}
+                      onChange={(e) =>
+                        setFiltro({
+                          ...filtro,
+                          statusFinalizada: e.target.checked,
+                        })
+                      }
+                    />
+                  }
+                  label="Finalizada"
+                />
+                <FormControlLabel
+                  control={
+                    <Checkbox
+                      checked={filtro.statusCancelada}
+                      onChange={(e) =>
+                        setFiltro({
+                          ...filtro,
+                          statusCancelada: e.target.checked,
+                        })
+                      }
+                    />
+                  }
+                  label="Cancelada"
+                />
+              </FormGroup>
+            </Box>
+          </Grid2>
+
+          {/* Botão Limpar */}
+          <Grid2
+            size={{ xs: 12, md: 3 }}
+            sx={{
+              display: "flex",
+            }}
+          >
+            <Button
+              fullWidth
+              variant="outlined"
+              onClick={limparFiltros}
+              sx={{ height: "40px", marginTop: 5 }}
+            >
+              Limpar Filtros
+            </Button>
+          </Grid2>
+        </Grid2>
+      </Paper>
+
       <TableContainer component={Paper}>
         <Table>
           <TableHead>
@@ -198,17 +379,16 @@ export default function OrcamentosList() {
             </TableRow>
           </TableHead>
           <TableBody>
-            {orcamentos.length === 0 ? (
+            {orcamentosFiltrados.length === 0 ? (
               <TableRow>
                 <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
                   <Typography color="text.secondary">
-                    Nenhum orçamento cadastrado. Clique em "Novo Orçamento" para
-                    começar.
+                    Nenhum orçamento encontrado com os filtros aplicados.
                   </Typography>
                 </TableCell>
               </TableRow>
             ) : (
-              orcamentos.map((orcamento) => (
+              orcamentosFiltrados.map((orcamento) => (
                 <TableRow key={orcamento.id} hover>
                   <TableCell>{orcamento.cliente}</TableCell>
                   <TableCell>{orcamento.moveis}</TableCell>
