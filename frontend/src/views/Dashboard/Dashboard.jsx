@@ -1,10 +1,13 @@
-import { Box, Typography, Grid2, Paper } from "@mui/material";
+import { useState, useEffect } from "react";
+import { Box, Typography, Grid2, Paper, Alert } from "@mui/material";
 import {
   Assignment,
   TrendingUp,
   CalendarMonth,
   AttachMoney,
 } from "@mui/icons-material";
+import dashboardService from "../../services/dashboardService";
+import CardResumoOrcamentos from "./components/CardResumoOrcamentos";
 
 const StatCard = ({ title, value, icon, color }) => (
   <Paper
@@ -49,61 +52,74 @@ const StatCard = ({ title, value, icon, color }) => (
 );
 
 export default function Dashboard() {
+  const [resumo, setResumo] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    carregarResumo();
+  }, []);
+
+  const carregarResumo = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const dados = await dashboardService.getResumo();
+      setResumo(dados);
+    } catch (err) {
+      console.error("Erro ao carregar resumo:", err);
+      setError(err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <Box>
       <Typography variant="h4" sx={{ mb: 4, fontWeight: 600 }}>
         Bem-vindo ao Madeirart
       </Typography>
 
+      {error && !loading && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          Erro ao carregar dados do dashboard. Verifique se o backend está
+          rodando.
+        </Alert>
+      )}
+
       <Grid2 container spacing={3}>
-        <Grid2 item xs={12} sm={6} md={3}>
-          <StatCard
-            title="Orçamentos Ativos"
-            value="12"
-            icon={<Assignment sx={{ fontSize: 40, color: "#D2691E" }} />}
-            color="#D2691E"
+        {/* Card de Resumo de Orçamentos */}
+        <Grid2 size={{ xs: 12, md: 4 }}>
+          <CardResumoOrcamentos
+            resumo={resumo}
+            loading={loading}
+            error={error}
           />
         </Grid2>
 
-        <Grid2 item xs={12} sm={6} md={3}>
-          <StatCard
-            title="Em Produção"
-            value="5"
-            icon={<TrendingUp sx={{ fontSize: 40, color: "#1976d2" }} />}
-            color="#1976d2"
-          />
-        </Grid2>
+        {/* Cards temporários - serão substituídos */}
+        <Grid2 size={{ xs: 12, md: 8 }}>
+          <Grid2 container spacing={3}>
+            <Grid2 size={{ xs: 12, sm: 6 }}>
+              <StatCard
+                title="Próximos Vencimentos"
+                value="Em breve"
+                icon={<CalendarMonth sx={{ fontSize: 40, color: "#ed6c02" }} />}
+                color="#ed6c02"
+              />
+            </Grid2>
 
-        <Grid2 item xs={12} sm={6} md={3}>
-          <StatCard
-            title="Próximos Vencimentos"
-            value="3"
-            icon={<CalendarMonth sx={{ fontSize: 40, color: "#ed6c02" }} />}
-            color="#ed6c02"
-          />
-        </Grid2>
-
-        <Grid2 item xs={12} sm={6} md={3}>
-          <StatCard
-            title="Receita do Mês"
-            value="R$ 15.420"
-            icon={<AttachMoney sx={{ fontSize: 40, color: "#2e7d32" }} />}
-            color="#2e7d32"
-          />
+            <Grid2 size={{ xs: 12, sm: 6 }}>
+              <StatCard
+                title="Receita do Mês"
+                value="Em breve"
+                icon={<AttachMoney sx={{ fontSize: 40, color: "#2e7d32" }} />}
+                color="#2e7d32"
+              />
+            </Grid2>
+          </Grid2>
         </Grid2>
       </Grid2>
-
-      <Box sx={{ mt: 4 }}>
-        <Paper sx={{ p: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            Visão Geral
-          </Typography>
-          <Typography color="text.secondary">
-            Aqui você terá acesso rápido aos principais indicadores do seu
-            negócio. Use o menu lateral para navegar entre as funcionalidades.
-          </Typography>
-        </Paper>
-      </Box>
     </Box>
   );
 }
