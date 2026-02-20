@@ -65,11 +65,12 @@ public class CustoVariavelController {
     /**
      * Cria um novo custo variável
      * POST /api/custos-variaveis
+     * Retorna lista de custos criados (pode ser múltiplos se parcelado)
      */
     @PostMapping
-    public ResponseEntity<CustoVariavelResponseDTO> criar(@Valid @RequestBody CustoVariavelRequestDTO dto) {
-        CustoVariavelResponseDTO custo = custoVariavelService.criar(dto);
-        return ResponseEntity.status(HttpStatus.CREATED).body(custo);
+    public ResponseEntity<List<CustoVariavelResponseDTO>> criar(@Valid @RequestBody CustoVariavelRequestDTO dto) {
+        List<CustoVariavelResponseDTO> custos = custoVariavelService.criar(dto);
+        return ResponseEntity.status(HttpStatus.CREATED).body(custos);
     }
 
     /**

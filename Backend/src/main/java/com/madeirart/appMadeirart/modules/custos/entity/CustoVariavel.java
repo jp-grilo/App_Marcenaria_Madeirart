@@ -48,6 +48,18 @@ public class CustoVariavel {
     @Column(nullable = false, length = 20)
     private StatusCusto status;
 
+    @Column(name = "parcelado")
+    private Boolean parcelado;
+
+    @Column(name = "numero_parcela")
+    private Integer numeroParcela;
+
+    @Column(name = "total_parcelas")
+    private Integer totalParcelas;
+
+    @Column(name = "custo_origem_id")
+    private Long custoOrigemId;
+
     @Column(name = "created_at", updatable = false)
     private LocalDate createdAt;
 
@@ -60,6 +72,9 @@ public class CustoVariavel {
         updatedAt = LocalDate.now();
         if (status == null) {
             status = StatusCusto.PENDENTE;
+        }
+        if (parcelado == null) {
+            parcelado = false;
         }
     }
 

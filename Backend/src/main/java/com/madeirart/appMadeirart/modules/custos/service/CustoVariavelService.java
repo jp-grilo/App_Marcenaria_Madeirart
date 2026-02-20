@@ -10,7 +10,10 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -58,21 +61,80 @@ public class CustoVariavelService {
 
     /**
      * Cria um novo custo variável
+     * Se quantidadeParcelas > 1, cria múltiplas parcelas
      */
     @Transactional
-    public CustoVariavelResponseDTO criar(CustoVariavelRequestDTO dto) {
+    public List<CustoVariavelResponseDTO> criar(CustoVariavelRequestDTO dto) {
         log.info("Criando novo custo variável: {}", dto.nome());
 
-        CustoVariavel custoVariavel = CustoVariavel.builder()
-                .nome(dto.nome())
-                .valor(dto.valor())
-                .dataLancamento(dto.dataLancamento())
-                .descricao(dto.descricao())
-                .build();
+        List<CustoVariavelResponseDTO> custosCreated = new ArrayList<>();
 
-        CustoVariavel saved = custoVariavelRepository.save(custoVariavel);
-        log.info("Custo variável criado com sucesso - ID: {}", saved.getId());
-        return convertToDTO(saved);
+        // Se não houver parcelamento ou for apenas 1 parcela
+        if (dto.quantidadeParcelas() == null || dto.quantidadeParcelas() <= 1) {
+            CustoVariavel custoVariavel = CustoVariavel.builder()
+                    .nome(dto.nome())
+                    .valor(dto.valor())
+                    .dataLancamento(dto.dataLancamento())
+                    .descricao(dto.descricao())
+                    .parcelado(false)
+                    .build();
+
+            CustoVariavel saved = custoVariavelRepository.save(custoVariavel);
+            log.info("Custo variável criado com sucesso - ID: {}", saved.getId());
+            custosCreated.add(convertToDTO(saved));
+        } else {
+            int quantidadeParcelas = dto.quantidadeParcelas();
+            BigDecimal valorParcela = dto.valor().divide(
+                    BigDecimal.valueOf(quantidadeParcelas),
+                    2,
+                    RoundingMode.HALF_UP);
+
+            CustoVariavel primeiraParcela = CustoVariavel.builder()
+                    .nome(formatarNomeParcela(dto.nome(), 1, quantidadeParcelas))
+                    .valor(valorParcela)
+                    .dataLancamento(dto.dataLancamento())
+                    .descricao(dto.descricao())
+                    .parcelado(true)
+                    .numeroParcela(1)
+                    .totalParcelas(quantidadeParcelas)
+                    .build();
+
+            CustoVariavel savedPrimeira = custoVariavelRepository.save(primeiraParcela);
+            savedPrimeira.setCustoOrigemId(savedPrimeira.getId());
+            savedPrimeira = custoVariavelRepository.save(savedPrimeira);
+            custosCreated.add(convertToDTO(savedPrimeira));
+
+            Long custoOrigemId = savedPrimeira.getId();
+
+            for (int i = 2; i <= quantidadeParcelas; i++) {
+                LocalDate dataParcela = dto.dataLancamento().plusMonths(i - 1);
+
+                CustoVariavel parcela = CustoVariavel.builder()
+                        .nome(formatarNomeParcela(dto.nome(), i, quantidadeParcelas))
+                        .valor(valorParcela)
+                        .dataLancamento(dataParcela)
+                        .descricao(dto.descricao())
+                        .parcelado(true)
+                        .numeroParcela(i)
+                        .totalParcelas(quantidadeParcelas)
+                        .custoOrigemId(custoOrigemId)
+                        .build();
+
+                CustoVariavel saved = custoVariavelRepository.save(parcela);
+                custosCreated.add(convertToDTO(saved));
+            }
+
+            log.info("Custo variável parcelado criado com sucesso - {} parcelas geradas", quantidadeParcelas);
+        }
+
+        return custosCreated;
+    }
+
+    /**
+     * Formata o nome da parcela: NomeCusto (N/K)
+     */
+    private String formatarNomeParcela(String nomeBase, int numeroParcela, int totalParcelas) {
+        return String.format("%s (%d/%d)", nomeBase, numeroParcela, totalParcelas);
     }
 
     /**
@@ -121,6 +183,10 @@ public class CustoVariavelService {
                 custoVariavel.getDataLancamento(),
                 custoVariavel.getDescricao(),
                 custoVariavel.getStatus(),
+                custoVariavel.getParcelado(),
+                custoVariavel.getNumeroParcela(),
+                custoVariavel.getTotalParcelas(),
+                custoVariavel.getCustoOrigemId(),
                 custoVariavel.getCreatedAt(),
                 custoVariavel.getUpdatedAt());
     }

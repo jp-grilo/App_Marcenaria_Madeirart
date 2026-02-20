@@ -21,5 +21,8 @@ public record CustoVariavelRequestDTO(
         @NotNull(message = "Data de lançamento é obrigatória") 
         LocalDate dataLancamento,
 
-        String descricao) {
+        String descricao,
+
+        @Positive(message = "Quantidade de parcelas deve ser positiva")
+        Integer quantidadeParcelas) {
 }

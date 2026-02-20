@@ -42,11 +42,13 @@ export default function CustoForm() {
     valor: "",
     descricao: "",
     dataLancamento: new Date().toISOString().split("T")[0],
+    quantidadeParcelas: "",
   });
 
   // Determina qual estado usar baseado no tipo
   const formData = tipoCusto === "fixo" ? custoFixoData : custoVariavelData;
-  const setFormData = tipoCusto === "fixo" ? setCustoFixoData : setCustoVariavelData;
+  const setFormData =
+    tipoCusto === "fixo" ? setCustoFixoData : setCustoVariavelData;
 
   const [errors, setErrors] = useState({});
 
@@ -99,9 +101,6 @@ export default function CustoForm() {
   const handleTipoCustoChange = (e) => {
     const novoTipo = e.target.value;
     setTipoCusto(novoTipo);
-    // Os campos já estão limpos porque cada tipo tem seu próprio estado
-    // A troca de estado acontece automaticamente
-    // Limpa os erros ao trocar o tipo
     setErrors({});
   };
 
@@ -126,6 +125,14 @@ export default function CustoForm() {
     } else {
       if (!formData.dataLancamento) {
         novosErros.dataLancamento = "Data de lançamento é obrigatória";
+      }
+
+      // Validar quantidade de parcelas se fornecida
+      if (formData.quantidadeParcelas) {
+        const qtdParcelas = parseInt(formData.quantidadeParcelas);
+        if (qtdParcelas < 1 || qtdParcelas > 120) {
+          novosErros.quantidadeParcelas = "Quantidade deve estar entre 1 e 120";
+        }
       }
     }
 
@@ -162,13 +169,25 @@ export default function CustoForm() {
         }
       } else {
         dados.dataLancamento = formData.dataLancamento;
+        if (
+          formData.quantidadeParcelas &&
+          parseInt(formData.quantidadeParcelas) > 0
+        ) {
+          dados.quantidadeParcelas = parseInt(formData.quantidadeParcelas);
+        }
 
         if (isEditMode) {
           await custoService.atualizarCustoVariavel(id, dados);
           showSuccess("Custo variável atualizado com sucesso");
         } else {
           await custoService.criarCustoVariavel(dados);
-          showSuccess("Custo variável criado com sucesso");
+          if (dados.quantidadeParcelas && dados.quantidadeParcelas > 1) {
+            showSuccess(
+              `${dados.quantidadeParcelas} parcelas criadas com sucesso`,
+            );
+          } else {
+            showSuccess("Custo variável criado com sucesso");
+          }
         }
       }
 
@@ -301,22 +320,47 @@ export default function CustoForm() {
 
             {/* Data de Lançamento (somente para custo variável) */}
             {tipoCusto === "variavel" && (
-              <Grid2 size={{ xs: 12, md: 6 }}>
-                <TextField
-                  fullWidth
-                  label="Data de Lançamento"
-                  name="dataLancamento"
-                  type="date"
-                  value={formData.dataLancamento}
-                  onChange={handleChange}
-                  error={!!errors.dataLancamento}
-                  helperText={errors.dataLancamento}
-                  required
-                  InputLabelProps={{
-                    shrink: true,
-                  }}
-                />
-              </Grid2>
+              <>
+                <Grid2 size={{ xs: 12, md: 6 }}>
+                  <TextField
+                    fullWidth
+                    label="Data de Lançamento"
+                    name="dataLancamento"
+                    type="date"
+                    value={formData.dataLancamento}
+                    onChange={handleChange}
+                    error={!!errors.dataLancamento}
+                    helperText={errors.dataLancamento}
+                    required
+                    InputLabelProps={{
+                      shrink: true,
+                    }}
+                  />
+                </Grid2>
+
+                {/* Quantidade de Parcelas (somente para custo variável não editando) */}
+                {!isEditMode && (
+                  <Grid2 size={{ xs: 12, md: 6 }}>
+                    <TextField
+                      fullWidth
+                      label="Quantidade de Parcelas"
+                      name="quantidadeParcelas"
+                      type="number"
+                      value={formData.quantidadeParcelas}
+                      onChange={handleChange}
+                      error={!!errors.quantidadeParcelas}
+                      helperText={
+                        errors.quantidadeParcelas ||
+                        "Deixe vazio ou 1 para sem parcelamento"
+                      }
+                      inputProps={{
+                        min: "1",
+                        max: "120",
+                      }}
+                    />
+                  </Grid2>
+                )}
+              </>
             )}
 
             {/* Descrição */}
@@ -339,7 +383,11 @@ export default function CustoForm() {
               <Alert severity="info">
                 {tipoCusto === "fixo"
                   ? "O custo fixo será criado com status PENDENTE e estará ativo."
-                  : "O custo variável será criado com status PENDENTE."}
+                  : !isEditMode &&
+                      formData.quantidadeParcelas &&
+                      parseInt(formData.quantidadeParcelas) > 1
+                    ? `Serão criadas ${formData.quantidadeParcelas} parcelas a partir da data de lançamento, com valores iguais e status PENDENTE. O nome incluirá (N/K) para indicar a parcela.`
+                    : "O custo variável será criado com status PENDENTE."}
               </Alert>
             </Grid2>
 
