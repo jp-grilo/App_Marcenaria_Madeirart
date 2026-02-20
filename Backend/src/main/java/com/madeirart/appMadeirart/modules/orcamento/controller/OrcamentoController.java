@@ -128,4 +128,20 @@ public class OrcamentoController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    /**
+     * Altera o status de um orçamento
+     * PATCH /api/orcamentos/{id}/status?novoStatus=FINALIZADA
+     */
+    @PatchMapping("/{id}/status")
+    public ResponseEntity<OrcamentoResponseDTO> alterarStatus(
+            @PathVariable Long id,
+            @RequestParam StatusOrcamento novoStatus) {
+        try {
+            OrcamentoResponseDTO response = orcamentoService.alterarStatus(id, novoStatus);
+            return ResponseEntity.ok(response);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }

@@ -68,6 +68,18 @@ const orcamentoService = {
     const response = await api.patch(`/orcamentos/${id}/iniciar`, dados);
     return response.data;
   },
+
+  /**
+   * Altera o status de um orçamento
+   * @param {number} id - ID do orçamento
+   * @param {string} novoStatus - Novo status (INICIADA, FINALIZADA, CANCELADA)
+   */
+  alterarStatus: async (id, novoStatus) => {
+    const response = await api.patch(`/orcamentos/${id}/status`, null, {
+      params: { novoStatus },
+    });
+    return response.data;
+  },
 };
 
 export default orcamentoService;

@@ -272,6 +272,21 @@ public class OrcamentoService {
     }
 
     /**
+     * Altera o status de um orçamento
+     */
+    @Transactional
+    public OrcamentoResponseDTO alterarStatus(Long id, StatusOrcamento novoStatus) {
+        Orcamento orcamento = orcamentoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Orçamento não encontrado com ID: " + id));
+
+        salvarAuditoria(orcamento);
+        orcamento.setStatus(novoStatus);
+        orcamento = orcamentoRepository.save(orcamento);
+
+        return convertToResponseDTO(orcamento);
+    }
+
+    /**
      * Busca o histórico de auditoria de um orçamento
      */
     @Transactional(readOnly = true)
