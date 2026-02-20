@@ -48,6 +48,7 @@ class CustoVariavelServiceTest {
                 .dataLancamento(LocalDate.now())
                 .descricao("Compra de materiais")
                 .status(StatusCusto.PENDENTE)
+                .parcelado(false)
                 .createdAt(LocalDate.now())
                 .updatedAt(LocalDate.now())
                 .build();
@@ -56,7 +57,8 @@ class CustoVariavelServiceTest {
                 "Material de Construção",
                 new BigDecimal("500.00"),
                 LocalDate.now(),
-                "Compra de materiais");
+                "Compra de materiais",
+                null);
     }
 
     @Test
@@ -68,6 +70,7 @@ class CustoVariavelServiceTest {
                 .valor(new BigDecimal("200.00"))
                 .dataLancamento(LocalDate.now().minusDays(1))
                 .status(StatusCusto.PAGO)
+                .parcelado(false)
                 .build();
 
         when(custoVariavelRepository.findAllByOrderByDataLancamentoDesc())
@@ -139,13 +142,45 @@ class CustoVariavelServiceTest {
     void deveCriarCustoVariavelComSucesso() {
         when(custoVariavelRepository.save(any(CustoVariavel.class))).thenReturn(custoVariavel);
 
-        CustoVariavelResponseDTO resultado = custoVariavelService.criar(custoVariavelRequestDTO);
+        List<CustoVariavelResponseDTO> resultado = custoVariavelService.criar(custoVariavelRequestDTO);
 
         assertThat(resultado).isNotNull();
-        assertThat(resultado.nome()).isEqualTo("Material de Construção");
-        assertThat(resultado.valor()).isEqualByComparingTo(new BigDecimal("500.00"));
-        assertThat(resultado.status()).isEqualTo(StatusCusto.PENDENTE);
+        assertThat(resultado).hasSize(1);
+        assertThat(resultado.get(0).nome()).isEqualTo("Material de Construção");
+        assertThat(resultado.get(0).valor()).isEqualByComparingTo(new BigDecimal("500.00"));
+        assertThat(resultado.get(0).status()).isEqualTo(StatusCusto.PENDENTE);
         verify(custoVariavelRepository).save(any(CustoVariavel.class));
+    }
+
+    @Test
+    @DisplayName("Deve criar custo variável parcelado com sucesso")
+    void deveCriarCustoVariavelParceladoComSucesso() {
+        CustoVariavelRequestDTO requestParcelado = new CustoVariavelRequestDTO(
+                "Máquina de cola",
+                new BigDecimal("1000.00"),
+                LocalDate.now(),
+                "Compra parcelada",
+                5);
+
+        CustoVariavel parcela1 = CustoVariavel.builder()
+                .id(1L)
+                .nome("Máquina de cola (1/5)")
+                .valor(new BigDecimal("200.00"))
+                .dataLancamento(LocalDate.now())
+                .parcelado(true)
+                .numeroParcela(1)
+                .totalParcelas(5)
+                .custoOrigemId(1L)
+                .status(StatusCusto.PENDENTE)
+                .build();
+
+        when(custoVariavelRepository.save(any(CustoVariavel.class))).thenReturn(parcela1);
+
+        List<CustoVariavelResponseDTO> resultado = custoVariavelService.criar(requestParcelado);
+
+        assertThat(resultado).isNotNull();
+        assertThat(resultado).hasSize(5);
+        verify(custoVariavelRepository, times(6)).save(any(CustoVariavel.class)); // 5 parcelas + 1 update da primeira
     }
 
     @Test
@@ -155,7 +190,8 @@ class CustoVariavelServiceTest {
                 "Material de Construção Atualizado",
                 new BigDecimal("600.00"),
                 LocalDate.now(),
-                "Descrição atualizada");
+                "Descrição atualizada",
+                null);
 
         when(custoVariavelRepository.findById(1L)).thenReturn(Optional.of(custoVariavel));
         when(custoVariavelRepository.save(any(CustoVariavel.class))).thenReturn(custoVariavel);
