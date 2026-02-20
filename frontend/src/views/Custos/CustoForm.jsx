@@ -251,14 +251,6 @@ export default function CustoForm() {
               </Grid2>
             )}
 
-            {isEditMode && (
-              <Grid2 size={12}>
-                <Alert severity="info">
-                  Editando custo {tipoCusto === "fixo" ? "fixo" : "variável"}
-                </Alert>
-              </Grid2>
-            )}
-
             {/* Nome */}
             <Grid2 size={{ xs: 12, md: 6 }}>
               <TextField
@@ -376,19 +368,6 @@ export default function CustoForm() {
                 inputProps={{ maxLength: 500 }}
                 helperText={`${formData.descricao.length}/500 caracteres`}
               />
-            </Grid2>
-
-            {/* Informação sobre status */}
-            <Grid2 size={12}>
-              <Alert severity="info">
-                {tipoCusto === "fixo"
-                  ? "O custo fixo será criado com status PENDENTE e estará ativo."
-                  : !isEditMode &&
-                      formData.quantidadeParcelas &&
-                      parseInt(formData.quantidadeParcelas) > 1
-                    ? `Serão criadas ${formData.quantidadeParcelas} parcelas a partir da data de lançamento, com valores iguais e status PENDENTE. O nome incluirá (N/K) para indicar a parcela.`
-                    : "O custo variável será criado com status PENDENTE."}
-              </Alert>
             </Grid2>
 
             {/* Botões */}

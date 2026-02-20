@@ -69,6 +69,24 @@ const custoService = {
     await api.delete(`/custos-fixos/${id}`);
   },
 
+  /**
+   * Marca um custo fixo como pago
+   * @param {number} id - ID do custo fixo
+   */
+  marcarCustoFixoComoPago: async (id) => {
+    const response = await api.patch(`/custos-fixos/${id}/marcar-pago`);
+    return response.data;
+  },
+
+  /**
+   * Marca um custo fixo como pendente
+   * @param {number} id - ID do custo fixo
+   */
+  marcarCustoFixoComoPendente: async (id) => {
+    const response = await api.patch(`/custos-fixos/${id}/marcar-pendente`);
+    return response.data;
+  },
+
   // ========== Custos Variáveis ==========
 
   /**
@@ -114,6 +132,24 @@ const custoService = {
    */
   excluirCustoVariavel: async (id) => {
     await api.delete(`/custos-variaveis/${id}`);
+  },
+
+  /**
+   * Marca um custo variável como pago
+   * @param {number} id - ID do custo variável
+   */
+  marcarCustoVariavelComoPago: async (id) => {
+    const response = await api.patch(`/custos-variaveis/${id}/marcar-pago`);
+    return response.data;
+  },
+
+  /**
+   * Marca um custo variável como pendente
+   * @param {number} id - ID do custo variável
+   */
+  marcarCustoVariavelComoPendente: async (id) => {
+    const response = await api.patch(`/custos-variaveis/${id}/marcar-pendente`);
+    return response.data;
   },
 };
 

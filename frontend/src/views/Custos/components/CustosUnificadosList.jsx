@@ -20,6 +20,11 @@ import {
   FormControlLabel,
   Checkbox,
   FormGroup,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
 } from "@mui/material";
 import {
   Edit,
@@ -45,6 +50,38 @@ export default function CustosUnificadosList() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const [dialogConfirmacao, setDialogConfirmacao] = useState({
+    aberto: false,
+    titulo: "",
+    mensagem: "",
+    onConfirmar: null,
+  });
+
+  const abrirDialogConfirmacao = (titulo, mensagem, onConfirmar) => {
+    setDialogConfirmacao({
+      aberto: true,
+      titulo,
+      mensagem,
+      onConfirmar,
+    });
+  };
+
+  const fecharDialogConfirmacao = () => {
+    setDialogConfirmacao({
+      aberto: false,
+      titulo: "",
+      mensagem: "",
+      onConfirmar: null,
+    });
+  };
+
+  const confirmarAcao = () => {
+    if (dialogConfirmacao.onConfirmar) {
+      dialogConfirmacao.onConfirmar();
+    }
+    fecharDialogConfirmacao();
+  };
+
   const getDataInicial = () => {
     const data = new Date();
     data.setDate(data.getDate() - 30);
@@ -60,12 +97,23 @@ export default function CustosUnificadosList() {
     mostrarVariaveis: true,
     dataInicio: getDataInicial(),
     dataFim: getDataFinal(),
+    statusPendente: true,
+    statusPago: true,
+    statusAtrasado: true,
   });
 
   useEffect(() => {
     carregarCustos();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtro]);
+
+  const calcularDataReferenciaCustoFixo = (diaVencimento) => {
+    const hoje = new Date();
+    const ano = hoje.getFullYear();
+    const mes = String(hoje.getMonth() + 1).padStart(2, "0"); // Mês de 1-12
+    const dia = String(diaVencimento).padStart(2, "0");
+    return `${ano}-${mes}-${dia}`;
+  };
 
   const carregarCustos = async () => {
     try {
@@ -91,7 +139,7 @@ export default function CustosUnificadosList() {
         const custosFixosFormatados = custosFixosFiltrados.map((c) => ({
           ...c,
           tipo: "FIXO",
-          dataReferencia: null,
+          dataReferencia: calcularDataReferenciaCustoFixo(c.diaVencimento),
         }));
         todosOsCustos = [...todosOsCustos, ...custosFixosFormatados];
       }
@@ -112,13 +160,19 @@ export default function CustosUnificadosList() {
       }
 
       todosOsCustos.sort((a, b) => {
-        if (a.dataReferencia && b.dataReferencia) {
-          return new Date(b.dataReferencia) - new Date(a.dataReferencia);
-        }
-        if (a.dataReferencia) return -1;
-        if (b.dataReferencia) return 1;
-        return a.nome.localeCompare(b.nome);
+        return new Date(b.dataReferencia) - new Date(a.dataReferencia);
       });
+
+      const statusSelecionados = [];
+      if (filtro.statusPendente) statusSelecionados.push("PENDENTE");
+      if (filtro.statusPago) statusSelecionados.push("PAGO");
+      if (filtro.statusAtrasado) statusSelecionados.push("ATRASADO");
+
+      if (statusSelecionados.length > 0) {
+        todosOsCustos = todosOsCustos.filter((custo) =>
+          statusSelecionados.includes(custo.status),
+        );
+      }
 
       setCustos(todosOsCustos);
     } catch (err) {
@@ -139,7 +193,6 @@ export default function CustosUnificadosList() {
     const inicio = new Date(dataInicio);
     const fim = new Date(dataFim);
 
-    // Cria um Set com todos os dias do mês que estão no período
     const diasDoMesNoPeriodo = new Set();
 
     const dataAtual = new Date(inicio);
@@ -148,23 +201,26 @@ export default function CustosUnificadosList() {
       dataAtual.setDate(dataAtual.getDate() + 1);
     }
 
-    // Filtra custos fixos cujo diaVencimento está no período
     return custos.filter((custo) =>
       diasDoMesNoPeriodo.has(custo.diaVencimento),
     );
   };
 
-  const handleDesativarCustoFixo = async (id) => {
-    if (!window.confirm("Deseja desativar este custo fixo?")) return;
-
-    try {
-      await custoService.desativarCustoFixo(id);
-      showSuccess("Custo fixo desativado com sucesso!");
-      carregarCustos();
-    } catch (err) {
-      showError("Erro ao desativar custo fixo.");
-      console.error(err);
-    }
+  const handleDesativarCustoFixo = (id) => {
+    abrirDialogConfirmacao(
+      "Desativar Custo Fixo",
+      "Deseja desativar este custo fixo?",
+      async () => {
+        try {
+          await custoService.desativarCustoFixo(id);
+          showSuccess("Custo fixo desativado com sucesso!");
+          carregarCustos();
+        } catch (err) {
+          showError("Erro ao desativar custo fixo.");
+          console.error(err);
+        }
+      },
+    );
   };
 
   const handleReativarCustoFixo = async (id) => {
@@ -178,31 +234,74 @@ export default function CustosUnificadosList() {
     }
   };
 
-  const handleExcluirCustoFixo = async (id) => {
-    if (!window.confirm("Deseja excluir permanentemente este custo fixo?"))
-      return;
-
-    try {
-      await custoService.excluirCustoFixo(id);
-      showSuccess("Custo fixo excluído com sucesso!");
-      carregarCustos();
-    } catch (err) {
-      showError("Erro ao excluir custo fixo.");
-      console.error(err);
-    }
+  const handleExcluirCustoFixo = (id) => {
+    abrirDialogConfirmacao(
+      "Excluir Custo Fixo",
+      "Deseja excluir permanentemente este custo fixo?",
+      async () => {
+        try {
+          await custoService.excluirCustoFixo(id);
+          showSuccess("Custo fixo excluído com sucesso!");
+          carregarCustos();
+        } catch (err) {
+          showError("Erro ao excluir custo fixo.");
+          console.error(err);
+        }
+      },
+    );
   };
 
-  const handleExcluirCustoVariavel = async (id) => {
-    if (!window.confirm("Deseja excluir este custo variável?")) return;
+  const handleExcluirCustoVariavel = (id) => {
+    abrirDialogConfirmacao(
+      "Excluir Custo Variável",
+      "Deseja excluir este custo variável?",
+      async () => {
+        try {
+          await custoService.excluirCustoVariavel(id);
+          showSuccess("Custo variável excluído com sucesso!");
+          carregarCustos();
+        } catch (err) {
+          showError("Erro ao excluir custo variável.");
+          console.error(err);
+        }
+      },
+    );
+  };
 
-    try {
-      await custoService.excluirCustoVariavel(id);
-      showSuccess("Custo variável excluído com sucesso!");
-      carregarCustos();
-    } catch (err) {
-      showError("Erro ao excluir custo variável.");
-      console.error(err);
-    }
+  const handleAlterarStatusCusto = (custo) => {
+    const estaPago = custo.status === "PAGO";
+    const novoStatus = estaPago ? "PENDENTE" : "PAGO";
+    const mensagem = estaPago
+      ? "Desmarcar custo como pago?"
+      : "Marcar custo como pago?";
+    const titulo = estaPago ? "Desmarcar como Pago" : "Marcar como Pago";
+
+    abrirDialogConfirmacao(titulo, mensagem, async () => {
+      try {
+        if (custo.tipo === "FIXO") {
+          if (novoStatus === "PAGO") {
+            await custoService.marcarCustoFixoComoPago(custo.id);
+            showSuccess("Custo fixo marcado como PAGO!");
+          } else {
+            await custoService.marcarCustoFixoComoPendente(custo.id);
+            showSuccess("Custo fixo desmarcado como PAGO!");
+          }
+        } else {
+          if (novoStatus === "PAGO") {
+            await custoService.marcarCustoVariavelComoPago(custo.id);
+            showSuccess("Custo variável marcado como PAGO!");
+          } else {
+            await custoService.marcarCustoVariavelComoPendente(custo.id);
+            showSuccess("Custo variável desmarcado como PAGO!");
+          }
+        }
+
+        carregarCustos();
+      } catch (err) {
+        showError("Erro ao alterar status do custo.");
+        console.error(err);
+      }
+    });
   };
 
   const limparFiltros = () => {
@@ -211,6 +310,9 @@ export default function CustosUnificadosList() {
       mostrarVariaveis: true,
       dataInicio: getDataInicial(),
       dataFim: getDataFinal(),
+      statusPendente: true,
+      statusPago: true,
+      statusAtrasado: true,
     });
   };
 
@@ -273,7 +375,58 @@ export default function CustosUnificadosList() {
             </FormGroup>
           </Grid2>
 
-          {/* Período (apenas variáveis) */}
+          {/* Status de Pagamento */}
+          <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
+            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
+              Status de Pagamento
+            </Typography>
+            <FormGroup>
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={filtro.statusPendente}
+                    onChange={(e) =>
+                      setFiltro({
+                        ...filtro,
+                        statusPendente: e.target.checked,
+                      })
+                    }
+                  />
+                }
+                label="Pendente"
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={filtro.statusPago}
+                    onChange={(e) =>
+                      setFiltro({
+                        ...filtro,
+                        statusPago: e.target.checked,
+                      })
+                    }
+                  />
+                }
+                label="Pago"
+              />
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={filtro.statusAtrasado}
+                    onChange={(e) =>
+                      setFiltro({
+                        ...filtro,
+                        statusAtrasado: e.target.checked,
+                      })
+                    }
+                  />
+                }
+                label="Atrasado"
+              />
+            </FormGroup>
+          </Grid2>
+
+          {/* Período */}
           <Grid2 size={{ xs: 12, sm: 6, md: 4 }}>
             <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
               Período
@@ -291,7 +444,6 @@ export default function CustosUnificadosList() {
                   dataInicio: e.target.value,
                 })
               }
-              disabled={!filtro.mostrarVariaveis}
               sx={{ mb: 1 }}
             />
             <TextField
@@ -307,7 +459,6 @@ export default function CustosUnificadosList() {
                   dataFim: e.target.value,
                 })
               }
-              disabled={!filtro.mostrarVariaveis}
             />
           </Grid2>
 
@@ -323,7 +474,7 @@ export default function CustosUnificadosList() {
               fullWidth
               variant="outlined"
               onClick={limparFiltros}
-              sx={{ height: "50px" }}
+              sx={{ height: "40px", fontSize: "0.8rem" }}
             >
               Limpar Filtros
             </Button>
@@ -347,7 +498,7 @@ export default function CustosUnificadosList() {
               <TableRow>
                 <TableCell>Tipo</TableCell>
                 <TableCell>Nome</TableCell>
-                <TableCell>Data/Dia</TableCell>
+                <TableCell>Data</TableCell>
                 <TableCell align="right">Valor</TableCell>
                 <TableCell align="center">Status</TableCell>
                 <TableCell align="center">Ações</TableCell>
@@ -365,20 +516,26 @@ export default function CustosUnificadosList() {
                     />
                   </TableCell>
                   <TableCell>{custo.nome}</TableCell>
-                  <TableCell>
-                    {custo.tipo === "FIXO"
-                      ? `Dia ${custo.diaVencimento}`
-                      : formatDate(custo.dataLancamento)}
-                  </TableCell>
+                  <TableCell>{formatDate(custo.dataReferencia)}</TableCell>
                   <TableCell align="right">
                     {formatCurrency(custo.valor)}
                   </TableCell>
                   <TableCell align="center">
-                    <Chip
-                      label={STATUS_CUSTO_LABELS[custo.status]}
-                      color={STATUS_CUSTO_CORES[custo.status]}
-                      size="small"
-                    />
+                    <Tooltip
+                      title={
+                        custo.status === "PAGO"
+                          ? "Clique para desmarcar como PAGO"
+                          : "Clique para marcar como PAGO"
+                      }
+                    >
+                      <Chip
+                        label={STATUS_CUSTO_LABELS[custo.status]}
+                        color={STATUS_CUSTO_CORES[custo.status]}
+                        size="small"
+                        onClick={() => handleAlterarStatusCusto(custo)}
+                        sx={{ cursor: "pointer" }}
+                      />
+                    </Tooltip>
                   </TableCell>
                   <TableCell align="center">
                     <Tooltip title="Editar">
@@ -444,6 +601,34 @@ export default function CustosUnificadosList() {
           </Table>
         </TableContainer>
       )}
+
+      {/* Dialog de Confirmação */}
+      <Dialog
+        open={dialogConfirmacao.aberto}
+        onClose={fecharDialogConfirmacao}
+        aria-labelledby="dialog-titulo"
+        aria-describedby="dialog-descricao"
+      >
+        <DialogTitle id="dialog-titulo">{dialogConfirmacao.titulo}</DialogTitle>
+        <DialogContent>
+          <DialogContentText id="dialog-descricao">
+            {dialogConfirmacao.mensagem}
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={fecharDialogConfirmacao} color="inherit">
+            Cancelar
+          </Button>
+          <Button
+            onClick={confirmarAcao}
+            color="primary"
+            variant="contained"
+            autoFocus
+          >
+            Confirmar
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
