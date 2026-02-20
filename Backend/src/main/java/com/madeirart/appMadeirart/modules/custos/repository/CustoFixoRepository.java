@@ -1,6 +1,7 @@
 package com.madeirart.appMadeirart.modules.custos.repository;
 
 import com.madeirart.appMadeirart.modules.custos.entity.CustoFixo;
+import com.madeirart.appMadeirart.shared.enums.StatusCusto;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -31,4 +32,9 @@ public interface CustoFixoRepository extends JpaRepository<CustoFixo, Long> {
      * Busca todos os custos fixos ativos ordenados por dia de vencimento
      */
     List<CustoFixo> findByAtivoTrueOrderByDiaVencimento();
+
+    /**
+     * Busca custos fixos por status
+     */
+    List<CustoFixo> findByStatus(StatusCusto status);
 }

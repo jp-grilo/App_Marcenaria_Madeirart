@@ -102,4 +102,32 @@ public class CustoVariavelController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    /**
+     * Marca um custo variável como pago
+     * PATCH /api/custos-variaveis/{id}/marcar-pago
+     */
+    @PatchMapping("/{id}/marcar-pago")
+    public ResponseEntity<CustoVariavelResponseDTO> marcarComoPago(@PathVariable Long id) {
+        try {
+            CustoVariavelResponseDTO custo = custoVariavelService.marcarComoPago(id);
+            return ResponseEntity.ok(custo);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
+     * Marca um custo variável como pendente
+     * PATCH /api/custos-variaveis/{id}/marcar-pendente
+     */
+    @PatchMapping("/{id}/marcar-pendente")
+    public ResponseEntity<CustoVariavelResponseDTO> marcarComoPendente(@PathVariable Long id) {
+        try {
+            CustoVariavelResponseDTO custo = custoVariavelService.marcarComoPendente(id);
+            return ResponseEntity.ok(custo);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }

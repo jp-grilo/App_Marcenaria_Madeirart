@@ -1,6 +1,7 @@
 package com.madeirart.appMadeirart.modules.custos.repository;
 
 import com.madeirart.appMadeirart.modules.custos.entity.CustoVariavel;
+import com.madeirart.appMadeirart.shared.enums.StatusCusto;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -22,4 +23,9 @@ public interface CustoVariavelRepository extends JpaRepository<CustoVariavel, Lo
      * Busca custos variáveis em um período específico
      */
     List<CustoVariavel> findByDataLancamentoBetween(LocalDate dataInicio, LocalDate dataFim);
+
+    /**
+     * Busca custos variáveis por status e data de lançamento anterior a uma data específica
+     */
+    List<CustoVariavel> findByStatusAndDataLancamentoBefore(StatusCusto status, LocalDate data);
 }

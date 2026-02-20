@@ -4,6 +4,7 @@ import com.madeirart.appMadeirart.modules.custos.dto.CustoVariavelRequestDTO;
 import com.madeirart.appMadeirart.modules.custos.dto.CustoVariavelResponseDTO;
 import com.madeirart.appMadeirart.modules.custos.entity.CustoVariavel;
 import com.madeirart.appMadeirart.modules.custos.repository.CustoVariavelRepository;
+import com.madeirart.appMadeirart.shared.enums.StatusCusto;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -170,6 +171,70 @@ public class CustoVariavelService {
 
         custoVariavelRepository.deleteById(id);
         log.info("Custo variável excluído com sucesso - ID: {}", id);
+    }
+
+    /**
+     * Marca um custo variável como pago
+     */
+    @Transactional
+    public CustoVariavelResponseDTO marcarComoPago(Long id) {
+        log.info("Marcando custo variável como PAGO - ID: {}", id);
+
+        CustoVariavel custoVariavel = custoVariavelRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Custo variável não encontrado com ID: " + id));
+
+        custoVariavel.setStatus(StatusCusto.PAGO);
+        CustoVariavel saved = custoVariavelRepository.save(custoVariavel);
+        log.info("Custo variável marcado como PAGO - ID: {}", id);
+        return convertToDTO(saved);
+    }
+
+    /**
+     * Marca um custo variável como pendente
+     */
+    @Transactional
+    public CustoVariavelResponseDTO marcarComoPendente(Long id) {
+        log.info("Marcando custo variável como PENDENTE - ID: {}", id);
+
+        CustoVariavel custoVariavel = custoVariavelRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Custo variável não encontrado com ID: " + id));
+
+        if (custoVariavel.getDataLancamento().isBefore(LocalDate.now())) {
+            custoVariavel.setStatus(StatusCusto.ATRASADO);
+        } else {
+            custoVariavel.setStatus(StatusCusto.PENDENTE);
+        }
+        CustoVariavel saved = custoVariavelRepository.save(custoVariavel);
+        log.info("Custo variável marcado como {} - ID: {}", custoVariavel.getStatus(), id);
+        return convertToDTO(saved);
+    }
+
+    /**
+     * Atualiza o status de custos variáveis pendentes com data de lançamento
+     * vencida para ATRASADO
+     * 
+     * @return Quantidade de custos atualizados
+     */
+    @Transactional
+    public int atualizarCustosAtrasados() {
+        log.info("Iniciando atualização de custos variáveis atrasados");
+
+        // Busca custos variáveis com status PENDENTE e data de lançamento anterior à
+        // data atual
+        List<CustoVariavel> custosAtrasados = custoVariavelRepository
+                .findByStatusAndDataLancamentoBefore(StatusCusto.PENDENTE, LocalDate.now());
+
+        if (custosAtrasados.isEmpty()) {
+            log.info("Nenhum custo variável atrasado encontrado");
+            return 0;
+        }
+
+        // Atualiza o status para ATRASADO
+        custosAtrasados.forEach(custo -> custo.setStatus(StatusCusto.ATRASADO));
+        custoVariavelRepository.saveAll(custosAtrasados);
+
+        log.info("Total de {} custo(s) variável(is) atualizado(s) para status ATRASADO", custosAtrasados.size());
+        return custosAtrasados.size();
     }
 
     /**

@@ -5,7 +5,8 @@ package com.madeirart.appMadeirart.shared.enums;
  */
 public enum StatusCusto {
     PENDENTE("Pendente"),
-    PAGO("Pago");
+    PAGO("Pago"),
+    ATRASADO("Atrasado");
 
     private final String descricao;
 

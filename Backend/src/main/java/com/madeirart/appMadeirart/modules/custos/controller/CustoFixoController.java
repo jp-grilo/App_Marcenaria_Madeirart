@@ -137,4 +137,32 @@ public class CustoFixoController {
             return ResponseEntity.notFound().build();
         }
     }
+
+    /**
+     * Marca um custo fixo como pago
+     * PATCH /api/custos-fixos/{id}/marcar-pago
+     */
+    @PatchMapping("/{id}/marcar-pago")
+    public ResponseEntity<CustoFixoResponseDTO> marcarComoPago(@PathVariable Long id) {
+        try {
+            CustoFixoResponseDTO custo = custoFixoService.marcarComoPago(id);
+            return ResponseEntity.ok(custo);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
+
+    /**
+     * Marca um custo fixo como pendente
+     * PATCH /api/custos-fixos/{id}/marcar-pendente
+     */
+    @PatchMapping("/{id}/marcar-pendente")
+    public ResponseEntity<CustoFixoResponseDTO> marcarComoPendente(@PathVariable Long id) {
+        try {
+            CustoFixoResponseDTO custo = custoFixoService.marcarComoPendente(id);
+            return ResponseEntity.ok(custo);
+        } catch (EntityNotFoundException e) {
+            return ResponseEntity.notFound().build();
+        }
+    }
 }

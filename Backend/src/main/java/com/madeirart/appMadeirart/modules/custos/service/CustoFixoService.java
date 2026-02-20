@@ -4,6 +4,7 @@ import com.madeirart.appMadeirart.modules.custos.dto.CustoFixoRequestDTO;
 import com.madeirart.appMadeirart.modules.custos.dto.CustoFixoResponseDTO;
 import com.madeirart.appMadeirart.modules.custos.entity.CustoFixo;
 import com.madeirart.appMadeirart.modules.custos.repository.CustoFixoRepository;
+import com.madeirart.appMadeirart.shared.enums.StatusCusto;
 import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -161,6 +162,76 @@ public class CustoFixoService {
 
         custoFixoRepository.deleteById(id);
         log.info("Custo fixo excluído com sucesso - ID: {}", id);
+    }
+
+    /**
+     * Marca um custo fixo como pago
+     */
+    @Transactional
+    public CustoFixoResponseDTO marcarComoPago(Long id) {
+        log.info("Marcando custo fixo como PAGO - ID: {}", id);
+
+        CustoFixo custoFixo = custoFixoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Custo fixo não encontrado com ID: " + id));
+
+        custoFixo.setStatus(StatusCusto.PAGO);
+        CustoFixo saved = custoFixoRepository.save(custoFixo);
+        log.info("Custo fixo marcado como PAGO - ID: {}", id);
+        return convertToDTO(saved);
+    }
+
+    /**
+     * Marca um custo fixo como pendente
+     */
+    @Transactional
+    public CustoFixoResponseDTO marcarComoPendente(Long id) {
+        log.info("Marcando custo fixo como PENDENTE - ID: {}", id);
+
+        CustoFixo custoFixo = custoFixoRepository.findById(id)
+                .orElseThrow(() -> new EntityNotFoundException("Custo fixo não encontrado com ID: " + id));
+
+        if (custoFixo.getDiaVencimento() < java.time.LocalDate.now().getDayOfMonth()) {
+            custoFixo.setStatus(StatusCusto.ATRASADO);
+        } else {
+            custoFixo.setStatus(StatusCusto.PENDENTE);
+        }
+        CustoFixo saved = custoFixoRepository.save(custoFixo);
+        log.info("Custo fixo marcado como {} - ID: {}", custoFixo.getStatus(), id);
+        return convertToDTO(saved);
+    }
+
+    /**
+     * Atualiza o status de custos fixos pendentes que estão atrasados
+     * Considera atrasado quando o dia de vencimento já passou no mês atual
+     * 
+     * @return Quantidade de custos atualizados
+     */
+    @Transactional
+    public int atualizarCustosAtrasados() {
+        log.info("Iniciando atualização de custos fixos atrasados");
+
+        // Busca todos os custos fixos com status PENDENTE
+        List<CustoFixo> custosPendentes = custoFixoRepository.findByStatus(StatusCusto.PENDENTE);
+        
+        // Obtém o dia atual do mês
+        int diaAtual = java.time.LocalDate.now().getDayOfMonth();
+        
+        // Filtra custos cujo dia de vencimento já passou
+        List<CustoFixo> custosAtrasados = custosPendentes.stream()
+                .filter(custo -> custo.getDiaVencimento() < diaAtual)
+                .toList();
+
+        if (custosAtrasados.isEmpty()) {
+            log.info("Nenhum custo fixo atrasado encontrado");
+            return 0;
+        }
+
+        // Atualiza o status para ATRASADO
+        custosAtrasados.forEach(custo -> custo.setStatus(StatusCusto.ATRASADO));
+        custoFixoRepository.saveAll(custosAtrasados);
+
+        log.info("Total de {} custo(s) fixo(s) atualizado(s) para status ATRASADO", custosAtrasados.size());
+        return custosAtrasados.size();
     }
 
     /**
