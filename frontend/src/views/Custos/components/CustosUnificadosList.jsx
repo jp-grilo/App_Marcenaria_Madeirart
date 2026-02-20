@@ -78,7 +78,17 @@ export default function CustosUnificadosList() {
         const paramsFixos = { apenasAtivos: true };
 
         const custosFixos = await custoService.listarCustosFixos(paramsFixos);
-        const custosFixosFormatados = custosFixos.map((c) => ({
+
+        let custosFixosFiltrados = custosFixos;
+        if (filtro.dataInicio && filtro.dataFim) {
+          custosFixosFiltrados = filtrarCustosFixosPorPeriodo(
+            custosFixos,
+            filtro.dataInicio,
+            filtro.dataFim,
+          );
+        }
+
+        const custosFixosFormatados = custosFixosFiltrados.map((c) => ({
           ...c,
           tipo: "FIXO",
           dataReferencia: null,
@@ -101,9 +111,6 @@ export default function CustosUnificadosList() {
         todosOsCustos = [...todosOsCustos, ...custosVariaveisFormatados];
       }
 
-      // Filtrar apenas custos com status PAGO
-      todosOsCustos = todosOsCustos.filter((c) => c.status === "PAGO");
-
       todosOsCustos.sort((a, b) => {
         if (a.dataReferencia && b.dataReferencia) {
           return new Date(b.dataReferencia) - new Date(a.dataReferencia);
@@ -122,6 +129,29 @@ export default function CustosUnificadosList() {
     } finally {
       setLoading(false);
     }
+  };
+
+  /**
+   * Filtra custos fixos baseado no período de datas
+   * Verifica se o diaVencimento está dentro dos dias do período
+   */
+  const filtrarCustosFixosPorPeriodo = (custos, dataInicio, dataFim) => {
+    const inicio = new Date(dataInicio);
+    const fim = new Date(dataFim);
+
+    // Cria um Set com todos os dias do mês que estão no período
+    const diasDoMesNoPeriodo = new Set();
+
+    const dataAtual = new Date(inicio);
+    while (dataAtual <= fim) {
+      diasDoMesNoPeriodo.add(dataAtual.getDate());
+      dataAtual.setDate(dataAtual.getDate() + 1);
+    }
+
+    // Filtra custos fixos cujo diaVencimento está no período
+    return custos.filter((custo) =>
+      diasDoMesNoPeriodo.has(custo.diaVencimento),
+    );
   };
 
   const handleDesativarCustoFixo = async (id) => {
@@ -283,17 +313,17 @@ export default function CustosUnificadosList() {
 
           {/* Botão Limpar */}
           <Grid2
-            size={{ xs: 12, sm: 12, md: 2 }}
+            size={{ md: 2 }}
             sx={{
               display: "flex",
-              alignItems: "flex-end",
+              paddingTop: 3.7,
             }}
           >
             <Button
               fullWidth
               variant="outlined"
               onClick={limparFiltros}
-              sx={{ height: "40px" }}
+              sx={{ height: "50px" }}
             >
               Limpar Filtros
             </Button>
@@ -317,11 +347,9 @@ export default function CustosUnificadosList() {
               <TableRow>
                 <TableCell>Tipo</TableCell>
                 <TableCell>Nome</TableCell>
-                <TableCell>Descrição</TableCell>
                 <TableCell>Data/Dia</TableCell>
                 <TableCell align="right">Valor</TableCell>
                 <TableCell align="center">Status</TableCell>
-                <TableCell align="center">Situação</TableCell>
                 <TableCell align="center">Ações</TableCell>
               </TableRow>
             </TableHead>
@@ -337,7 +365,6 @@ export default function CustosUnificadosList() {
                     />
                   </TableCell>
                   <TableCell>{custo.nome}</TableCell>
-                  <TableCell>{custo.descricao || "-"}</TableCell>
                   <TableCell>
                     {custo.tipo === "FIXO"
                       ? `Dia ${custo.diaVencimento}`
@@ -352,17 +379,6 @@ export default function CustosUnificadosList() {
                       color={STATUS_CUSTO_CORES[custo.status]}
                       size="small"
                     />
-                  </TableCell>
-                  <TableCell align="center">
-                    {custo.tipo === "FIXO" ? (
-                      <Chip
-                        label={custo.ativo ? "Ativo" : "Inativo"}
-                        color={custo.ativo ? "success" : "default"}
-                        size="small"
-                      />
-                    ) : (
-                      <Chip label="-" size="small" variant="outlined" />
-                    )}
                   </TableCell>
                   <TableCell align="center">
                     <Tooltip title="Editar">
