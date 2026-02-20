@@ -1,46 +1,11 @@
 import { useState, useEffect } from "react";
-import {
-  Box,
-  Typography,
-  Paper,
-  TextField,
-  Grid2,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Chip,
-  IconButton,
-  Tooltip,
-  CircularProgress,
-  Alert,
-  Button,
-  FormControlLabel,
-  Checkbox,
-  FormGroup,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogContentText,
-  DialogActions,
-} from "@mui/material";
-import {
-  Edit,
-  Delete,
-  ToggleOff,
-  ToggleOn,
-  FilterList,
-} from "@mui/icons-material";
+import { Box, CircularProgress, Alert } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useSnackbar } from "../../../hooks/useSnackbar";
 import custoService from "../../../services/custoService";
-import { formatCurrency, formatDate } from "../../../utils/formatters";
-import {
-  STATUS_CUSTO_LABELS,
-  STATUS_CUSTO_CORES,
-} from "../../../utils/constants";
+import FiltrosCustos from "./FiltrosCustos";
+import TabelaCustos from "./TabelaCustos";
+import ConfirmacaoDialog from "../../../components/ConfirmacaoDialog";
 
 export default function CustosUnificadosList() {
   const navigate = useNavigate();
@@ -316,171 +281,20 @@ export default function CustosUnificadosList() {
     });
   };
 
+  const handleEditar = (custo) => {
+    const rota = custo.tipo === "FIXO" ? "fixo" : "variavel";
+    navigate(`/custos/${rota}/${custo.id}/editar`);
+  };
+
   return (
     <Box sx={{ p: 3 }}>
-      {/* Filtros */}
-      <Paper sx={{ p: 2, mb: 3, backgroundColor: "#f5f5f5" }}>
-        <Box
-          sx={{
-            display: "flex",
-            alignItems: "center",
-            mb: 2,
-            gap: 1,
-          }}
-        >
-          <FilterList />
-          <Typography variant="h6">Filtros</Typography>
-        </Box>
-
-        <Grid2 container spacing={3}>
-          {/* Tipo de Custo */}
-          <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
-            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-              Tipo de Custo
-            </Typography>
-            <FormGroup>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={filtro.mostrarFixos}
-                    onChange={(e) =>
-                      setFiltro({
-                        ...filtro,
-                        mostrarFixos: e.target.checked,
-                      })
-                    }
-                  />
-                }
-                label="Custos Fixos"
-              />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={filtro.mostrarVariaveis}
-                    onChange={(e) => {
-                      const novoValor = e.target.checked;
-                      setFiltro({
-                        ...filtro,
-                        mostrarVariaveis: novoValor,
-                        dataInicio: novoValor
-                          ? filtro.dataInicio
-                          : getDataInicial(),
-                        dataFim: novoValor ? filtro.dataFim : getDataFinal(),
-                      });
-                    }}
-                  />
-                }
-                label="Custos Variáveis"
-              />
-            </FormGroup>
-          </Grid2>
-
-          {/* Status de Pagamento */}
-          <Grid2 size={{ xs: 12, sm: 6, md: 3 }}>
-            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-              Status de Pagamento
-            </Typography>
-            <FormGroup>
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={filtro.statusPendente}
-                    onChange={(e) =>
-                      setFiltro({
-                        ...filtro,
-                        statusPendente: e.target.checked,
-                      })
-                    }
-                  />
-                }
-                label="Pendente"
-              />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={filtro.statusPago}
-                    onChange={(e) =>
-                      setFiltro({
-                        ...filtro,
-                        statusPago: e.target.checked,
-                      })
-                    }
-                  />
-                }
-                label="Pago"
-              />
-              <FormControlLabel
-                control={
-                  <Checkbox
-                    checked={filtro.statusAtrasado}
-                    onChange={(e) =>
-                      setFiltro({
-                        ...filtro,
-                        statusAtrasado: e.target.checked,
-                      })
-                    }
-                  />
-                }
-                label="Atrasado"
-              />
-            </FormGroup>
-          </Grid2>
-
-          {/* Período */}
-          <Grid2 size={{ xs: 12, sm: 6, md: 4 }}>
-            <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 600 }}>
-              Período
-            </Typography>
-            <TextField
-              fullWidth
-              size="small"
-              type="date"
-              label="Data Início"
-              InputLabelProps={{ shrink: true }}
-              value={filtro.dataInicio}
-              onChange={(e) =>
-                setFiltro({
-                  ...filtro,
-                  dataInicio: e.target.value,
-                })
-              }
-              sx={{ mb: 1 }}
-            />
-            <TextField
-              fullWidth
-              size="small"
-              type="date"
-              label="Data Fim"
-              InputLabelProps={{ shrink: true }}
-              value={filtro.dataFim}
-              onChange={(e) =>
-                setFiltro({
-                  ...filtro,
-                  dataFim: e.target.value,
-                })
-              }
-            />
-          </Grid2>
-
-          {/* Botão Limpar */}
-          <Grid2
-            size={{ md: 2 }}
-            sx={{
-              display: "flex",
-              paddingTop: 3.7,
-            }}
-          >
-            <Button
-              fullWidth
-              variant="outlined"
-              onClick={limparFiltros}
-              sx={{ height: "40px", fontSize: "0.8rem" }}
-            >
-              Limpar Filtros
-            </Button>
-          </Grid2>
-        </Grid2>
-      </Paper>
+      <FiltrosCustos
+        filtro={filtro}
+        setFiltro={setFiltro}
+        getDataInicial={getDataInicial}
+        getDataFinal={getDataFinal}
+        onLimpar={limparFiltros}
+      />
 
       {/* Tabela Unificada */}
       {loading ? (
@@ -492,143 +306,24 @@ export default function CustosUnificadosList() {
       ) : custos.length === 0 ? (
         <Alert severity="info">Nenhum custo encontrado.</Alert>
       ) : (
-        <TableContainer component={Paper}>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Tipo</TableCell>
-                <TableCell>Nome</TableCell>
-                <TableCell>Data</TableCell>
-                <TableCell align="right">Valor</TableCell>
-                <TableCell align="center">Status</TableCell>
-                <TableCell align="center">Ações</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {custos.map((custo) => (
-                <TableRow key={`${custo.tipo}-${custo.id}`}>
-                  <TableCell>
-                    <Chip
-                      label={custo.tipo === "FIXO" ? "Fixo" : "Variável"}
-                      color={custo.tipo === "FIXO" ? "primary" : "secondary"}
-                      size="small"
-                      variant="outlined"
-                    />
-                  </TableCell>
-                  <TableCell>{custo.nome}</TableCell>
-                  <TableCell>{formatDate(custo.dataReferencia)}</TableCell>
-                  <TableCell align="right">
-                    {formatCurrency(custo.valor)}
-                  </TableCell>
-                  <TableCell align="center">
-                    <Tooltip
-                      title={
-                        custo.status === "PAGO"
-                          ? "Clique para desmarcar como PAGO"
-                          : "Clique para marcar como PAGO"
-                      }
-                    >
-                      <Chip
-                        label={STATUS_CUSTO_LABELS[custo.status]}
-                        color={STATUS_CUSTO_CORES[custo.status]}
-                        size="small"
-                        onClick={() => handleAlterarStatusCusto(custo)}
-                        sx={{ cursor: "pointer" }}
-                      />
-                    </Tooltip>
-                  </TableCell>
-                  <TableCell align="center">
-                    <Tooltip title="Editar">
-                      <IconButton
-                        size="small"
-                        onClick={() =>
-                          navigate(
-                            `/custos/${custo.tipo === "FIXO" ? "fixo" : "variavel"}/${custo.id}/editar`,
-                          )
-                        }
-                      >
-                        <Edit fontSize="small" />
-                      </IconButton>
-                    </Tooltip>
-
-                    {custo.tipo === "FIXO" ? (
-                      <>
-                        {custo.ativo ? (
-                          <Tooltip title="Desativar">
-                            <IconButton
-                              size="small"
-                              onClick={() => handleDesativarCustoFixo(custo.id)}
-                            >
-                              <ToggleOff fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        ) : (
-                          <Tooltip title="Reativar">
-                            <IconButton
-                              size="small"
-                              color="success"
-                              onClick={() => handleReativarCustoFixo(custo.id)}
-                            >
-                              <ToggleOn fontSize="small" />
-                            </IconButton>
-                          </Tooltip>
-                        )}
-                        <Tooltip title="Excluir Permanentemente">
-                          <IconButton
-                            size="small"
-                            color="error"
-                            onClick={() => handleExcluirCustoFixo(custo.id)}
-                          >
-                            <Delete fontSize="small" />
-                          </IconButton>
-                        </Tooltip>
-                      </>
-                    ) : (
-                      <Tooltip title="Excluir">
-                        <IconButton
-                          size="small"
-                          color="error"
-                          onClick={() => handleExcluirCustoVariavel(custo.id)}
-                        >
-                          <Delete fontSize="small" />
-                        </IconButton>
-                      </Tooltip>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <TabelaCustos
+          custos={custos}
+          onEditar={handleEditar}
+          onDesativarFixo={handleDesativarCustoFixo}
+          onReativarFixo={handleReativarCustoFixo}
+          onExcluirFixo={handleExcluirCustoFixo}
+          onExcluirVariavel={handleExcluirCustoVariavel}
+          onAlterarStatus={handleAlterarStatusCusto}
+        />
       )}
 
-      {/* Dialog de Confirmação */}
-      <Dialog
-        open={dialogConfirmacao.aberto}
-        onClose={fecharDialogConfirmacao}
-        aria-labelledby="dialog-titulo"
-        aria-describedby="dialog-descricao"
-      >
-        <DialogTitle id="dialog-titulo">{dialogConfirmacao.titulo}</DialogTitle>
-        <DialogContent>
-          <DialogContentText id="dialog-descricao">
-            {dialogConfirmacao.mensagem}
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={fecharDialogConfirmacao} color="inherit">
-            Cancelar
-          </Button>
-          <Button
-            onClick={confirmarAcao}
-            color="primary"
-            variant="contained"
-            autoFocus
-          >
-            Confirmar
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <ConfirmacaoDialog
+        aberto={dialogConfirmacao.aberto}
+        titulo={dialogConfirmacao.titulo}
+        mensagem={dialogConfirmacao.mensagem}
+        onConfirmar={confirmarAcao}
+        onCancelar={fecharDialogConfirmacao}
+      />
     </Box>
   );
 }
