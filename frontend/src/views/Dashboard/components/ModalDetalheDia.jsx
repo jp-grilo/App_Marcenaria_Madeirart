@@ -71,15 +71,7 @@ export default function ModalDetalheDia({ open, onClose, diaDados, data }) {
             alignItems: "center",
           }}
         >
-          <Typography variant="h6">Transações do Dia {data}</Typography>
-          <Button
-            onClick={onClose}
-            startIcon={<CloseIcon />}
-            size="small"
-            color="inherit"
-          >
-            Fechar
-          </Button>
+          <Typography variant="h6">{data}</Typography>
         </Box>
       </DialogTitle>
 

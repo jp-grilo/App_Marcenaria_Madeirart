@@ -109,6 +109,7 @@ export default function Dashboard() {
             projecao={projecao}
             loading={loadingProjecao}
             error={errorProjecao}
+            calendario={calendario}
           />
         </Grid2>
 

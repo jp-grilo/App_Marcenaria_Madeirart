@@ -40,7 +40,11 @@ export default function CalendarioFinanceiro({
     return null;
   }
 
-  const { ano, mes, dias = {} } = calendario || {
+  const {
+    ano,
+    mes,
+    dias = {},
+  } = calendario || {
     ano: new Date().getFullYear(),
     mes: new Date().getMonth() + 1,
     dias: {},
@@ -220,8 +224,8 @@ export default function CalendarioFinanceiro({
             </Box>
 
             <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <IconButton 
-                onClick={handleMesAnterior} 
+              <IconButton
+                onClick={handleMesAnterior}
                 size="small"
                 disabled={loading}
               >
@@ -236,8 +240,8 @@ export default function CalendarioFinanceiro({
                 </Typography>
                 {loading && <CircularProgress size={16} />}
               </Box>
-              <IconButton 
-                onClick={handleProximoMes} 
+              <IconButton
+                onClick={handleProximoMes}
                 size="small"
                 disabled={loading}
               >
@@ -340,7 +344,7 @@ export default function CalendarioFinanceiro({
           open={modalAberto}
           onClose={handleFecharModal}
           diaDados={diaSelecionado.dados}
-          data={`${diaSelecionado.dia}/${mes}/${ano}`}
+          data={`Transações do Dia ${diaSelecionado.dia}/${mes}/${ano}`}
         />
       )}
     </>

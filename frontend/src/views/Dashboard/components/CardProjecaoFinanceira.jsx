@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Card,
   CardContent,
@@ -17,12 +18,66 @@ import {
   CheckCircle,
 } from "@mui/icons-material";
 import { formatCurrency } from "../../../utils/formatters";
+import ModalDetalheDia from "./ModalDetalheDia";
 
 /**
  * Componente que exibe a projeção financeira mensal
  * Mostra receita prevista, receita recebida, despesa prevista e saldo projetado
  */
-export default function CardProjecaoFinanceira({ projecao, loading, error }) {
+export default function CardProjecaoFinanceira({
+  projecao,
+  loading,
+  error,
+  calendario,
+}) {
+  const [modalAberto, setModalAberto] = useState(false);
+  const [tipoTransacao, setTipoTransacao] = useState(null);
+
+  const agregarTransacoes = (tipo) => {
+    if (!calendario || !calendario.dias) {
+      return { entradas: [], saidas: [] };
+    }
+
+    const todasEntradas = [];
+    const todasSaidas = [];
+
+    Object.values(calendario.dias).forEach((dia) => {
+      if (dia.entradas) {
+        todasEntradas.push(...dia.entradas);
+      }
+      if (dia.saidas) {
+        todasSaidas.push(...dia.saidas);
+      }
+    });
+
+    if (tipo === "receitaRecebida") {
+      const receitasRecebidas = todasEntradas.filter(
+        (t) =>
+          t.status?.toUpperCase() === "PAGO" ||
+          t.status?.toUpperCase() === "RECEBIDO",
+      );
+      return { entradas: receitasRecebidas, saidas: [] };
+    } else if (tipo === "receitaPrevista") {
+      const receitasPrevistas = todasEntradas.filter(
+        (t) => t.status?.toUpperCase() === "PENDENTE",
+      );
+      return { entradas: receitasPrevistas, saidas: [] };
+    } else if (tipo === "despesaPrevista") {
+      return { entradas: [], saidas: todasSaidas };
+    }
+
+    return { entradas: [], saidas: [] };
+  };
+
+  const handleAbrirModal = (tipo) => {
+    setTipoTransacao(tipo);
+    setModalAberto(true);
+  };
+
+  const handleFecharModal = () => {
+    setModalAberto(false);
+    setTipoTransacao(null);
+  };
   if (error) {
     return (
       <Card sx={{ height: "100%" }}>
@@ -74,11 +129,19 @@ export default function CardProjecaoFinanceira({ projecao, loading, error }) {
 
         {/* Receita Recebida */}
         <Box
+          onClick={() => handleAbrirModal("receitaRecebida")}
           sx={{
             p: 2,
             backgroundColor: "rgba(46, 125, 50, 0.15)",
             borderRadius: 2,
             mb: 2,
+            cursor: "pointer",
+            transition: "all 0.2s",
+            "&:hover": {
+              backgroundColor: "rgba(46, 125, 50, 0.25)",
+              transform: "scale(1.02)",
+              boxShadow: 2,
+            },
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
@@ -97,11 +160,19 @@ export default function CardProjecaoFinanceira({ projecao, loading, error }) {
 
         {/* Receita Prevista */}
         <Box
+          onClick={() => handleAbrirModal("receitaPrevista")}
           sx={{
             p: 2,
             backgroundColor: "rgba(25, 118, 210, 0.1)",
             borderRadius: 2,
             mb: 2,
+            cursor: "pointer",
+            transition: "all 0.2s",
+            "&:hover": {
+              backgroundColor: "rgba(25, 118, 210, 0.2)",
+              transform: "scale(1.02)",
+              boxShadow: 2,
+            },
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
@@ -120,11 +191,19 @@ export default function CardProjecaoFinanceira({ projecao, loading, error }) {
 
         {/* Despesa Prevista */}
         <Box
+          onClick={() => handleAbrirModal("despesaPrevista")}
           sx={{
             p: 2,
             backgroundColor: "rgba(211, 47, 47, 0.1)",
             borderRadius: 2,
             mb: 2,
+            cursor: "pointer",
+            transition: "all 0.2s",
+            "&:hover": {
+              backgroundColor: "rgba(211, 47, 47, 0.2)",
+              transform: "scale(1.02)",
+              boxShadow: 2,
+            },
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
@@ -211,6 +290,22 @@ export default function CardProjecaoFinanceira({ projecao, loading, error }) {
         >
           <CircularProgress />
         </Box>
+      )}
+
+      {/* Modal de detalhes das transações */}
+      {modalAberto && tipoTransacao && (
+        <ModalDetalheDia
+          open={modalAberto}
+          onClose={handleFecharModal}
+          diaDados={agregarTransacoes(tipoTransacao)}
+          data={
+            tipoTransacao === "receitaRecebida"
+              ? `Receita Recebida - ${mesReferencia}`
+              : tipoTransacao === "receitaPrevista"
+                ? `Receita Prevista - ${mesReferencia}`
+                : `Despesa Prevista - ${mesReferencia}`
+          }
+        />
       )}
     </Card>
   );

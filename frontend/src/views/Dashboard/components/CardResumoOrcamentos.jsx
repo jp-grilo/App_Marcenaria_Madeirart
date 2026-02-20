@@ -17,12 +17,15 @@ import {
   CalendarMonth,
   Warning,
 } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 
 /**
  * Componente que exibe o resumo de orçamentos no dashboard
  * Mostra totais de orçamentos ativos, em produção e próximos da entrega
  */
 export default function CardResumoOrcamentos({ resumo, loading, error }) {
+  const navigate = useNavigate();
+
   if (loading) {
     return (
       <Card sx={{ height: "100%" }}>
@@ -174,12 +177,20 @@ export default function CardResumoOrcamentos({ resumo, loading, error }) {
                   <Box key={orcamento.id}>
                     {index > 0 && <Divider sx={{ my: 1 }} />}
                     <ListItem
+                      onClick={() => navigate(`/orcamentos/${orcamento.id}`)}
                       sx={{
                         px: 0,
                         py: 1,
                         display: "flex",
                         flexDirection: "column",
                         alignItems: "flex-start",
+                        cursor: "pointer",
+                        borderRadius: 1,
+                        transition: "all 0.2s",
+                        "&:hover": {
+                          backgroundColor: "action.hover",
+                          transform: "translateX(4px)",
+                        },
                       }}
                     >
                       <Box
