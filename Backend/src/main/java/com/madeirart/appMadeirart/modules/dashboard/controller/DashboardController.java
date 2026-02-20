@@ -38,11 +38,11 @@ public class DashboardController {
     public ResponseEntity<ProjecaoFinanceiraDTO> getProjecao(
             @RequestParam int mes,
             @RequestParam int ano) {
-        
+
         if (mes < 1 || mes > 12) {
             return ResponseEntity.badRequest().build();
         }
-        
+
         ProjecaoFinanceiraDTO projecao = projecaoFinanceiraService.calcularProjecaoMensal(mes, ano);
         return ResponseEntity.ok(projecao);
     }

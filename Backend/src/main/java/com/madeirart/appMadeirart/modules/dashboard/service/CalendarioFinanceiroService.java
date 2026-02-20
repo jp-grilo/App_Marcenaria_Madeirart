@@ -59,16 +59,16 @@ public class CalendarioFinanceiroService {
     private void processarParcelas(Map<Integer, DiaDadosDTO> diasMap, LocalDate inicio, LocalDate fim) {
         List<Parcela> parcelas = parcelaRepository.findAll().stream()
                 .filter(p -> {
-                    LocalDate dataReferencia = p.getDataPagamento() != null 
-                            ? p.getDataPagamento() 
+                    LocalDate dataReferencia = p.getDataPagamento() != null
+                            ? p.getDataPagamento()
                             : p.getDataVencimento();
                     return !dataReferencia.isBefore(inicio) && !dataReferencia.isAfter(fim);
                 })
                 .toList();
 
         for (Parcela parcela : parcelas) {
-            LocalDate dataReferencia = parcela.getDataPagamento() != null 
-                    ? parcela.getDataPagamento() 
+            LocalDate dataReferencia = parcela.getDataPagamento() != null
+                    ? parcela.getDataPagamento()
                     : parcela.getDataVencimento();
             int dia = dataReferencia.getDayOfMonth();
 
@@ -77,24 +77,22 @@ public class CalendarioFinanceiroService {
             TransacaoDTO transacao = new TransacaoDTO(
                     parcela.getId(),
                     TipoTransacao.ENTRADA,
-                    "Parcela " + parcela.getNumeroParcela() + " - " + 
-                               parcela.getOrcamento().getCliente(),
+                    "Parcela " + parcela.getNumeroParcela() + " - " +
+                            parcela.getOrcamento().getCliente(),
                     parcela.getValor(),
                     OrigemTransacao.PARCELA,
-                    parcela.getStatus().getDescricao()
-            );
+                    parcela.getStatus().getDescricao());
 
             // Criar nova lista com a transação adicionada
             List<TransacaoDTO> novasEntradas = new java.util.ArrayList<>(diaDados.entradas());
             novasEntradas.add(transacao);
-            
+
             DiaDadosDTO novoDia = new DiaDadosDTO(
                     dia,
                     true,
                     diaDados.temSaidas(),
                     novasEntradas,
-                    diaDados.saidas()
-            );
+                    diaDados.saidas());
             diasMap.put(dia, novoDia);
         }
     }
@@ -118,20 +116,18 @@ public class CalendarioFinanceiroService {
                     custo.getNome(),
                     custo.getValor(),
                     OrigemTransacao.CUSTO_FIXO,
-                    custo.getStatus().getDescricao()
-            );
+                    custo.getStatus().getDescricao());
 
             // Criar nova lista com a transação adicionada
             List<TransacaoDTO> novasSaidas = new java.util.ArrayList<>(diaDados.saidas());
             novasSaidas.add(transacao);
-            
+
             DiaDadosDTO novoDia = new DiaDadosDTO(
                     dia,
                     diaDados.temEntradas(),
                     true,
                     diaDados.entradas(),
-                    novasSaidas
-            );
+                    novasSaidas);
             diasMap.put(dia, novoDia);
         }
     }
@@ -160,20 +156,18 @@ public class CalendarioFinanceiroService {
                     descricao,
                     custo.getValor(),
                     OrigemTransacao.CUSTO_VARIAVEL,
-                    custo.getStatus().getDescricao()
-            );
+                    custo.getStatus().getDescricao());
 
             // Criar nova lista com a transação adicionada
             List<TransacaoDTO> novasSaidas = new java.util.ArrayList<>(diaDados.saidas());
             novasSaidas.add(transacao);
-            
+
             DiaDadosDTO novoDia = new DiaDadosDTO(
                     dia,
                     diaDados.temEntradas(),
                     true,
                     diaDados.entradas(),
-                    novasSaidas
-            );
+                    novasSaidas);
             diasMap.put(dia, novoDia);
         }
     }

@@ -56,8 +56,7 @@ public class ProjecaoFinanceiraService {
                 receitaPrevista,
                 despesaPrevista,
                 saldoProjetado,
-                mesReferencia
-        );
+                mesReferencia);
     }
 
     /**

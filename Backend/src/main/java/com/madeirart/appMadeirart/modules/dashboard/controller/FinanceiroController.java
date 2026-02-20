@@ -25,11 +25,11 @@ public class FinanceiroController {
     public ResponseEntity<CalendarioDTO> getCalendario(
             @RequestParam int mes,
             @RequestParam int ano) {
-        
+
         if (mes < 1 || mes > 12) {
             return ResponseEntity.badRequest().build();
         }
-        
+
         CalendarioDTO calendario = calendarioFinanceiroService.getCalendarioMensal(mes, ano);
         return ResponseEntity.ok(calendario);
     }

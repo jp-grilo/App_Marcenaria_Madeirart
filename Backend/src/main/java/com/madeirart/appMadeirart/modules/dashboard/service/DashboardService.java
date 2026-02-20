@@ -34,17 +34,17 @@ public class DashboardService {
         return new DashboardResumoDTO(
                 (long) orcamentosAtivos.size(),
                 (long) orcamentosEmProducao.size(),
-                orcamentosProximos
-        );
+                orcamentosProximos);
     }
 
     /**
      * Obtém orçamentos que estão próximos da data de entrega
+     * 
      * @param dias Número de dias de antecedência
      */
     public List<OrcamentoResumoDTO> getOrcamentosProximosEntrega(int dias) {
         LocalDate dataLimite = LocalDate.now().plusDays(dias);
-        
+
         return orcamentoRepository.findAll().stream()
                 .filter(o -> o.getPrevisaoEntrega() != null)
                 .filter(o -> o.getStatus() == StatusOrcamento.INICIADA)
@@ -63,7 +63,6 @@ public class DashboardService {
                 orcamento.getCliente(),
                 orcamento.getMoveis(),
                 orcamento.getPrevisaoEntrega(),
-                orcamento.getStatus().getDescricao()
-        );
+                orcamento.getStatus().getDescricao());
     }
 }
