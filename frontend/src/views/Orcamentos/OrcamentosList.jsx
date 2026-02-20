@@ -54,24 +54,66 @@ export default function OrcamentosList() {
     statusCancelada: true,
   });
 
-  useEffect(() => {
-    const carregarOrcamentos = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-        const dados = await orcamentoService.listar();
-        setOrcamentos(dados);
-      } catch (err) {
-        const mensagem =
-          "Erro ao carregar orçamentos. Verifique se o backend está rodando.";
-        setError(mensagem);
-        showError(mensagem);
-        console.error(err);
-      } finally {
-        setLoading(false);
-      }
-    };
+  /**
+   * Carrega a lista de orçamentos do backend
+   */
+  const carregarOrcamentos = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      const dados = await orcamentoService.listar();
+      setOrcamentos(dados);
+    } catch (err) {
+      const mensagem =
+        "Erro ao carregar orçamentos. Verifique se o backend está rodando.";
+      setError(mensagem);
+      showError(mensagem);
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  /**
+   * Recarrega a lista sem exibir loading
+   */
+  const recarregarLista = async () => {
+    try {
+      const dados = await orcamentoService.listar();
+      setOrcamentos(dados);
+    } catch (err) {
+      console.error("Erro ao recarregar orçamentos:", err);
+    }
+  };
+
+  /**
+   * Processa erros de requisição e retorna mensagem apropriada
+   */
+  const obterMensagemErro = (err, mensagemPadrao) => {
+    if (err.response) {
+      const { status, data } = err.response;
+
+      if (status === 500) {
+        return "Erro interno no servidor. Verifique os dados e tente novamente.";
+      }
+      if (status === 400) {
+        return typeof data === "string"
+          ? data
+          : data?.message || "Dados inválidos";
+      }
+      if (data) {
+        return typeof data === "string"
+          ? data
+          : data?.message || data?.error || mensagemPadrao;
+      }
+    }
+    if (err.request) {
+      return "Servidor não respondeu. Verifique sua conexão.";
+    }
+    return err.message || mensagemPadrao;
+  };
+
+  useEffect(() => {
     carregarOrcamentos();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -101,10 +143,7 @@ export default function OrcamentosList() {
       await orcamentoService.alterarStatus(orcamentoSelecionado.id, novoStatus);
       showSuccess("Status alterado com sucesso!");
       handleFecharDialogStatus();
-
-      // Recarregar a lista
-      const orcamentosAtualizados = await orcamentoService.listar();
-      setOrcamentos(orcamentosAtualizados);
+      await recarregarLista();
     } catch (err) {
       console.error("Erro ao alterar status:", err);
       showError("Erro ao alterar status do orçamento");
@@ -152,38 +191,10 @@ export default function OrcamentosList() {
       await orcamentoService.iniciarProducao(orcamentoSelecionado.id, dados);
       showSuccess("Produção iniciada com sucesso!");
       handleFecharDialog();
-
-      // Recarregar a lista
-      const orcamentosAtualizados = await orcamentoService.listar();
-      setOrcamentos(orcamentosAtualizados);
+      await recarregarLista();
     } catch (err) {
       console.error("Erro ao iniciar produção:", err);
-
-      let mensagem = "Erro ao iniciar produção";
-
-      if (err.response) {
-        const { status, data } = err.response;
-
-        if (status === 500) {
-          mensagem =
-            "Erro interno no servidor. Verifique os dados e tente novamente.";
-        } else if (status === 400) {
-          mensagem =
-            typeof data === "string"
-              ? data
-              : data?.message || "Dados inválidos";
-        } else if (data) {
-          mensagem =
-            typeof data === "string"
-              ? data
-              : data?.message || data?.error || mensagem;
-        }
-      } else if (err.request) {
-        mensagem = "Servidor não respondeu. Verifique sua conexão.";
-      } else {
-        mensagem = err.message || mensagem;
-      }
-
+      const mensagem = obterMensagemErro(err, "Erro ao iniciar produção");
       showError(mensagem);
     }
   };
