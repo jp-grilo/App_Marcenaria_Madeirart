@@ -1,21 +1,34 @@
 import { useState, useEffect } from "react";
-import { Box, Typography, Grid2, Paper, Alert } from "@mui/material";
+import { Box, Typography, Grid2, Alert } from "@mui/material";
 import dashboardService from "../../services/dashboardService";
 import CardResumoOrcamentos from "./components/CardResumoOrcamentos";
 import CardProjecaoFinanceira from "./components/CardProjecaoFinanceira";
+import CalendarioFinanceiro from "./components/CalendarioFinanceiro";
 
 export default function Dashboard() {
   const [resumo, setResumo] = useState(null);
   const [projecao, setProjecao] = useState(null);
+  const [calendario, setCalendario] = useState(null);
   const [loading, setLoading] = useState(true);
   const [loadingProjecao, setLoadingProjecao] = useState(true);
+  const [loadingCalendario, setLoadingCalendario] = useState(true);
   const [error, setError] = useState(null);
   const [errorProjecao, setErrorProjecao] = useState(null);
+  const [errorCalendario, setErrorCalendario] = useState(null);
+
+  // Estado para controle de mês/ano do calendário
+  const hoje = new Date();
+  const [mesCalendario, setMesCalendario] = useState(hoje.getMonth() + 1);
+  const [anoCalendario, setAnoCalendario] = useState(hoje.getFullYear());
 
   useEffect(() => {
     carregarResumo();
-    carregarProjecao();
   }, []);
+
+  useEffect(() => {
+    carregarProjecao(mesCalendario, anoCalendario);
+    carregarCalendario(mesCalendario, anoCalendario);
+  }, [mesCalendario, anoCalendario]);
 
   const carregarResumo = async () => {
     try {
@@ -31,16 +44,10 @@ export default function Dashboard() {
     }
   };
 
-  const carregarProjecao = async () => {
+  const carregarProjecao = async (mes, ano) => {
     try {
       setLoadingProjecao(true);
       setErrorProjecao(null);
-
-      // Obter mês e ano atuais
-      const hoje = new Date();
-      const mes = hoje.getMonth() + 1; // getMonth() retorna 0-11
-      const ano = hoje.getFullYear();
-
       const dados = await dashboardService.getProjecao(mes, ano);
       setProjecao(dados);
     } catch (err) {
@@ -51,13 +58,35 @@ export default function Dashboard() {
     }
   };
 
+  const carregarCalendario = async (mes, ano) => {
+    try {
+      setLoadingCalendario(true);
+      setErrorCalendario(null);
+      const dados = await dashboardService.getCalendario(mes, ano);
+      setCalendario(dados);
+    } catch (err) {
+      console.error("Erro ao carregar calendário:", err);
+      setErrorCalendario(err);
+    } finally {
+      setLoadingCalendario(false);
+    }
+  };
+
+  const handleMesChange = (novoMes, novoAno) => {
+    setMesCalendario(novoMes);
+    setAnoCalendario(novoAno);
+  };
+
+  const temErro = error || errorProjecao || errorCalendario;
+  const estaCarregando = loading || loadingProjecao || loadingCalendario;
+
   return (
     <Box>
       <Typography variant="h4" sx={{ mb: 4, fontWeight: 600 }}>
         Bem-vindo ao Madeirart
       </Typography>
 
-      {(error || errorProjecao) && !loading && !loadingProjecao && (
+      {temErro && !estaCarregando && (
         <Alert severity="error" sx={{ mb: 3 }}>
           Erro ao carregar dados do dashboard. Verifique se o backend está
           rodando.
@@ -83,16 +112,14 @@ export default function Dashboard() {
           />
         </Grid2>
 
-        {/* Cards temporários - serão substituídos pelo calendário */}
+        {/* Calendário Financeiro */}
         <Grid2 size={{ xs: 12, md: 4 }}>
-          <Paper sx={{ p: 3, height: "100%" }}>
-            <Typography variant="h6" sx={{ mb: 2 }}>
-              Calendário Financeiro
-            </Typography>
-            <Typography color="text.secondary">
-              Em breve: calendário com indicadores de entradas e saídas
-            </Typography>
-          </Paper>
+          <CalendarioFinanceiro
+            calendario={calendario}
+            loading={loadingCalendario}
+            error={errorCalendario}
+            onMesChange={handleMesChange}
+          />
         </Grid2>
       </Grid2>
     </Box>

@@ -23,6 +23,18 @@ const dashboardService = {
     });
     return response.data;
   },
+
+  /**
+   * Busca o calendário financeiro de um mês específico
+   * @param {number} mes - Mês (1-12)
+   * @param {number} ano - Ano
+   */
+  getCalendario: async (mes, ano) => {
+    const response = await api.get("/financeiro/calendario", {
+      params: { mes, ano },
+    });
+    return response.data;
+  },
 };
 
 export default dashboardService;

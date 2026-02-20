@@ -23,23 +23,6 @@ import { formatCurrency } from "../../../utils/formatters";
  * Mostra receita prevista, receita recebida, despesa prevista e saldo projetado
  */
 export default function CardProjecaoFinanceira({ projecao, loading, error }) {
-  if (loading) {
-    return (
-      <Card sx={{ height: "100%" }}>
-        <CardContent>
-          <Box
-            display="flex"
-            justifyContent="center"
-            alignItems="center"
-            minHeight={300}
-          >
-            <CircularProgress />
-          </Box>
-        </CardContent>
-      </Card>
-    );
-  }
-
   if (error) {
     return (
       <Card sx={{ height: "100%" }}>
@@ -50,7 +33,7 @@ export default function CardProjecaoFinanceira({ projecao, loading, error }) {
     );
   }
 
-  if (!projecao) {
+  if (!projecao && !loading) {
     return null;
   }
 
@@ -60,7 +43,7 @@ export default function CardProjecaoFinanceira({ projecao, loading, error }) {
     despesaPrevista = 0,
     saldoProjetado = 0,
     mesReferencia = "",
-  } = projecao;
+  } = projecao || {};
 
   const saldoPositivo = saldoProjetado >= 0;
   const corSaldo = saldoPositivo ? "#2e7d32" : "#d32f2f";
@@ -71,13 +54,14 @@ export default function CardProjecaoFinanceira({ projecao, loading, error }) {
     receitaTotal > 0 ? ((saldoProjetado / receitaTotal) * 100).toFixed(1) : 0;
 
   return (
-    <Card sx={{ height: "100%" }}>
+    <Card sx={{ height: "100%", position: "relative" }}>
       <CardContent>
         <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 3 }}>
           <CalendarMonth sx={{ color: "text.secondary" }} />
           <Typography variant="h6" sx={{ fontWeight: 600 }}>
             Projeção Financeira
           </Typography>
+          {loading && <CircularProgress size={16} />}
         </Box>
 
         <Typography
@@ -204,6 +188,30 @@ export default function CardProjecaoFinanceira({ projecao, loading, error }) {
           </Stack>
         </Box>
       </CardContent>
+
+      {/* Overlay de loading */}
+      {loading && (
+        <Box
+          sx={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: (theme) =>
+              theme.palette.mode === "dark"
+                ? "rgba(0, 0, 0, 0.7)"
+                : "rgba(255, 255, 255, 0.8)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            borderRadius: 1,
+            zIndex: 10,
+          }}
+        >
+          <CircularProgress />
+        </Box>
+      )}
     </Card>
   );
 }
