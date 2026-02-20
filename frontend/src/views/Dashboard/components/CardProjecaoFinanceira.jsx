@@ -14,12 +14,13 @@ import {
   TrendingDown,
   AccountBalance,
   CalendarMonth,
+  CheckCircle,
 } from "@mui/icons-material";
 import { formatCurrency } from "../../../utils/formatters";
 
 /**
  * Componente que exibe a projeção financeira mensal
- * Mostra receita prevista, despesa prevista e saldo projetado
+ * Mostra receita prevista, receita recebida, despesa prevista e saldo projetado
  */
 export default function CardProjecaoFinanceira({ projecao, loading, error }) {
   if (loading) {
@@ -55,6 +56,7 @@ export default function CardProjecaoFinanceira({ projecao, loading, error }) {
 
   const {
     receitaPrevista = 0,
+    receitaRecebida = 0,
     despesaPrevista = 0,
     saldoProjetado = 0,
     mesReferencia = "",
@@ -63,10 +65,10 @@ export default function CardProjecaoFinanceira({ projecao, loading, error }) {
   const saldoPositivo = saldoProjetado >= 0;
   const corSaldo = saldoPositivo ? "#2e7d32" : "#d32f2f";
 
+  const receitaTotal = receitaPrevista + receitaRecebida;
+
   const percentualMargem =
-    receitaPrevista > 0
-      ? ((saldoProjetado / receitaPrevista) * 100).toFixed(1)
-      : 0;
+    receitaTotal > 0 ? ((saldoProjetado / receitaTotal) * 100).toFixed(1) : 0;
 
   return (
     <Card sx={{ height: "100%" }}>
@@ -86,24 +88,47 @@ export default function CardProjecaoFinanceira({ projecao, loading, error }) {
           {mesReferencia}
         </Typography>
 
-        {/* Receita Prevista */}
+        {/* Receita Recebida */}
         <Box
           sx={{
             p: 2,
-            backgroundColor: "rgba(46, 125, 50, 0.1)",
+            backgroundColor: "rgba(46, 125, 50, 0.15)",
             borderRadius: 2,
             mb: 2,
           }}
         >
           <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
-            <TrendingUp sx={{ fontSize: 20, color: "#2e7d32" }} />
+            <CheckCircle sx={{ fontSize: 20, color: "#2e7d32" }} />
+            <Typography variant="body2" color="text.secondary">
+              Receita Recebida
+            </Typography>
+          </Box>
+          <Typography
+            variant="h5"
+            sx={{ fontWeight: "bold", color: "#2e7d32" }}
+          >
+            {formatCurrency(receitaRecebida)}
+          </Typography>
+        </Box>
+
+        {/* Receita Prevista */}
+        <Box
+          sx={{
+            p: 2,
+            backgroundColor: "rgba(25, 118, 210, 0.1)",
+            borderRadius: 2,
+            mb: 2,
+          }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+            <TrendingUp sx={{ fontSize: 20, color: "#1976d2" }} />
             <Typography variant="body2" color="text.secondary">
               Receita Prevista
             </Typography>
           </Box>
           <Typography
             variant="h5"
-            sx={{ fontWeight: "bold", color: "#2e7d32" }}
+            sx={{ fontWeight: "bold", color: "#1976d2" }}
           >
             {formatCurrency(receitaPrevista)}
           </Typography>
@@ -158,20 +183,25 @@ export default function CardProjecaoFinanceira({ projecao, loading, error }) {
             {formatCurrency(saldoProjetado)}
           </Typography>
 
-          {/* Indicador de margem */}
-          {receitaPrevista > 0 && (
-            <Stack direction="row" spacing={1} alignItems="center">
-              <Typography variant="caption" color="text.secondary">
-                Margem:
-              </Typography>
-              <Chip
-                size="small"
-                label={`${percentualMargem}%`}
-                color={saldoPositivo ? "success" : "error"}
-                sx={{ fontWeight: "bold" }}
-              />
-            </Stack>
-          )}
+          {/* Indicador de margem e receita total */}
+          <Stack spacing={1}>
+            {receitaTotal > 0 && (
+              <Stack direction="row" spacing={1} alignItems="center">
+                <Typography variant="caption" color="text.secondary">
+                  Margem:
+                </Typography>
+                <Chip
+                  size="small"
+                  label={`${percentualMargem}%`}
+                  color={saldoPositivo ? "success" : "error"}
+                  sx={{ fontWeight: "bold" }}
+                />
+              </Stack>
+            )}
+            <Typography variant="caption" color="text.secondary">
+              Receita Total: {formatCurrency(receitaTotal)}
+            </Typography>
+          </Stack>
         </Box>
       </CardContent>
     </Card>

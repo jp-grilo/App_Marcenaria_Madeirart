@@ -37,16 +37,14 @@ public class ProjecaoFinanceiraService {
         LocalDate inicioDomes = yearMonth.atDay(1);
         LocalDate fimDoMes = yearMonth.atEndOfMonth();
 
-        // Calcular receita prevista (parcelas pendentes do mês)
         BigDecimal receitaPrevista = calcularReceitaPrevista(inicioDomes, fimDoMes);
 
-        // Calcular despesa prevista (custos fixos e variáveis do mês)
+        BigDecimal receitaRecebida = calcularReceitaRecebida(inicioDomes, fimDoMes);
+
         BigDecimal despesaPrevista = calcularDespesaPrevista(inicioDomes, fimDoMes, mes);
 
-        // Calcular saldo projetado
-        BigDecimal saldoProjetado = receitaPrevista.subtract(despesaPrevista);
+        BigDecimal saldoProjetado = receitaPrevista.add(receitaRecebida).subtract(despesaPrevista);
 
-        // Formatar mês de referência
         Locale localeBR = Locale.forLanguageTag("pt-BR");
         String mesReferencia = yearMonth.getMonth()
                 .getDisplayName(TextStyle.FULL, localeBR)
@@ -54,6 +52,7 @@ public class ProjecaoFinanceiraService {
 
         return new ProjecaoFinanceiraDTO(
                 receitaPrevista,
+                receitaRecebida,
                 despesaPrevista,
                 saldoProjetado,
                 mesReferencia);
@@ -66,6 +65,21 @@ public class ProjecaoFinanceiraService {
         List<Parcela> parcelas = parcelaRepository.findAll().stream()
                 .filter(p -> p.getStatus() == StatusParcela.PENDENTE)
                 .filter(p -> !p.getDataVencimento().isBefore(inicio) && !p.getDataVencimento().isAfter(fim))
+                .toList();
+
+        return parcelas.stream()
+                .map(Parcela::getValor)
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+
+    /**
+     * Calcula a receita recebida baseada em parcelas PAGAS do período
+     */
+    private BigDecimal calcularReceitaRecebida(LocalDate inicio, LocalDate fim) {
+        List<Parcela> parcelas = parcelaRepository.findAll().stream()
+                .filter(p -> p.getStatus() == StatusParcela.PAGO)
+                .filter(p -> p.getDataPagamento() != null)
+                .filter(p -> !p.getDataPagamento().isBefore(inicio) && !p.getDataPagamento().isAfter(fim))
                 .toList();
 
         return parcelas.stream()
