@@ -14,8 +14,6 @@ import {
   Dashboard,
   Assignment,
   AccountBalanceWallet,
-  CalendarMonth,
-  Assessment,
   Settings,
 } from "@mui/icons-material";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -26,8 +24,6 @@ const menuItems = [
   { text: "Dashboard", icon: <Dashboard />, path: "/" },
   { text: "Orçamentos", icon: <Assignment />, path: "/orcamentos" },
   { text: "Custos", icon: <AccountBalanceWallet />, path: "/custos" },
-  { text: "Calendário", icon: <CalendarMonth />, path: "/calendario" },
-  { text: "Relatórios", icon: <Assessment />, path: "/relatorios" },
 ];
 
 export default function Sidebar() {

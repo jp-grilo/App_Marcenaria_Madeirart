@@ -274,3 +274,41 @@ Como marceneiro, quero poder filtrar transações futuras no meu extrato para an
 - [ ] Adicionar Toggle/Switch de "Ver Futuro" na tela de Relatório
 - [ ] Implementar lógica de reordenação automática da lista ao ativar a visão de projeção
 - [ ] Adicionar indicador visual diferenciando transações já efetivadas de projeções
+
+---
+
+### US11: Projeção de Fluxo de Caixa com Saldo Acumulado
+
+**Descrição:**
+
+Como marceneiro, quero visualizar uma tela de projeção de caixa que mostre o saldo acumulado desde o início e projete o fluxo para os próximos dois meses.
+
+### Critérios de Aceite
+
+- Exibir o **saldo atual** = (Saldo Inicial + Entradas Confirmadas - Saídas) desde o início do sistema
+- Mostrar projeção detalhada para os **próximos 2 meses** com: Saldo Inicial, Entradas Previstas, Saídas Previstas e Saldo Final
+- Visualização em tabela e gráfico de linha
+- Permitir cadastrar um **saldo inicial** do sistema
+
+### Tarefas Backend (Spring Boot)
+
+- [ ] Criar entidade `SaldoInicial` para armazenar o saldo de abertura do sistema
+- [ ] Criar DTOs para resposta: `ProjecaoCaixaDTO`, `MesProjecaoDTO` e `ItemProjecaoDTO`
+- [ ] Endpoint `GET /financeiro/projecao-caixa` retornando saldo atual e projeção dos próximos 2 meses
+- [ ] Endpoint `POST /financeiro/saldo-inicial` para cadastrar/atualizar saldo inicial
+- [ ] Criar `ProjecaoCaixaService` com lógica de:
+  - Cálculo do saldo atual (Saldo Inicial + Parcelas PAGAS - Custos até hoje)
+  - Projeção de entradas (parcelas PENDENTES por mês)
+  - Projeção de saídas (custos fixos projetados + custos variáveis cadastrados)
+  - Cálculo cascata: saldo final de um mês é saldo inicial do próximo
+
+### Tarefas Frontend (React)
+
+- [ ] Adicionar item "Projeção de Caixa" no menu de navegação
+- [ ] Criar view `views/Financeiro/ProjecaoCaixa.jsx`
+- [ ] Card exibindo saldo atual com cores condicionais e botão para definir saldo inicial
+- [ ] Modal para cadastro/edição do saldo inicial
+- [ ] Tabela com os meses projetados (colunas: Mês, Saldo Inicial, Entradas, Saídas, Saldo Final)
+- [ ] Linhas expansíveis na tabela mostrando detalhes das transações
+- [ ] Gráfico de linha mostrando evolução do saldo
+- [ ] Criar `projecaoCaixaService.js` com métodos de integração à API
