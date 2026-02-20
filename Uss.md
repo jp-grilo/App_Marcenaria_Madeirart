@@ -141,26 +141,85 @@ Aqui estão as novas User Stories (USs) detalhadas para os módulos de custos, d
 
 **Descrição:**
 
-Como marceneiro, quero visualizar um calendário com indicadores de entradas e saídas diárias para entender minha movimentação financeira de forma visual e rápida.
+Como marceneiro, quero visualizar no dashboard uma seção com as informações atualizadas sobre orçamentos ativos, em produção e próximos da data entrega; Quero outra seção com a projeção da receita estimada para o final do mês considerando tudo que tenho de receber depois de descontado o que preciso pagar; Quero um calendário com cores indicadoras de entradas e saídas em cada dia para entender minha movimentação financeira de forma visual e rápida.
 
 ### Critérios de Aceite
 
+- Cada seção estará no seu próprio card separado
+- Os cards presentes devem refletir as informações reais
 - O calendário deve mostrar uma marcação verde para dias com entradas (parcelas pagas/a receber) e vermelha para dias com saídas (custos)
 - Ao clicar em um dia, um modal deve abrir listando individualmente cada transação
 - **Regra de Exibição:** O modal não deve somar os valores; se houver 3 saídas de R$ 100, deve mostrar as três linhas separadamente
+- O card de projeção deve calcular: Receita Prevista do Mês - Despesas Previstas do Mês = Saldo Projetado
+- O card de orçamentos deve mostrar: Total de orçamentos ativos, quantidade em produção, e lista dos próximos a vencer (5 dias)
 
 ### Tarefas Backend (Spring Boot)
 
-- [ ] Criar endpoint `GET /financeiro/calendario?mes=X&ano=Y`
-- [ ] Implementar lógica para consolidar dados de `Parcela` (Entradas) e `Custos` (Saídas) agrupados por dia
-- [ ] Retornar estrutura de dados otimizada para renderização do calendário
+**Estruturas e DTOs:**
+
+- [ ] Criar DTO `DashboardResumoDTO` com campos: totalOrcamentosAtivos, totalEmProducao, orcamentosProximosEntrega (Lista)
+- [ ] Criar DTO `ProjecaoFinanceiraDTO` com campos: receitaPrevista, despesaPrevista, saldoProjetado, mesReferencia
+- [ ] Criar DTO `CalendarioDTO` com campos: ano, mes, dias (Map<Integer, DiaDadosDTO>)
+- [ ] Criar DTO `DiaDadosDTO` com campos: dia, temEntradas, temSaidas, entradas (Lista<TransacaoDTO>), saidas (Lista<TransacaoDTO>)
+- [ ] Criar DTO `TransacaoDTO` com campos: id, tipo (ENTRADA/SAIDA), descricao, valor, origem (PARCELA/CUSTO_FIXO/CUSTO_VARIAVEL), status
+
+**Endpoints:**
+
+- [ ] Criar endpoint `GET /dashboard/resumo` para retornar estatísticas de orçamentos
+- [ ] Criar endpoint `GET /dashboard/projecao?mes=X&ano=Y` para retornar projeção financeira do mês
+- [ ] Criar endpoint `GET /financeiro/calendario?mes=X&ano=Y` para retornar dados do calendário com transações agrupadas por dia
+
+**Services:**
+
+- [ ] Criar `DashboardService` com método `getResumoOrcamentos()` que busca orçamentos com status INICIADA e AGUARDANDO
+- [ ] Implementar método `getOrcamentosProximosEntrega(int dias)` que filtra orçamentos pela data de previsão de entrega
+- [ ] Criar `ProjecaoFinanceiraService` com método `calcularProjecaoMensal(int mes, int ano)`
+- [ ] Implementar lógica para somar parcelas PENDENTES do mês como receita prevista
+- [ ] Implementar lógica para somar custos fixos e variáveis do mês como despesa prevista
+- [ ] Criar `CalendarioFinanceiroService` com método `getCalendarioMensal(int mes, int ano)`
+- [ ] Implementar consolidação de `Parcela` (status PENDENTE e PAGO) agrupadas por data de vencimento/recebimento
+- [ ] Implementar consolidação de `CustoFixo` (projetado para o dia do mês) e `CustoVariavel` agrupados por data
+- [ ] Adicionar tratamento para meses sem transações (retornar calendário vazio mas estruturado)
 
 ### Tarefas Frontend (React)
 
-- [ ] Implementar componente de Calendário em `views/Dashboard/components/`
-- [ ] Implementar lógica de estilo condicional (CSS) para os indicadores de cores
-- [ ] Criar componente `ModalDetalheDia` que mapeia a lista de transações do dia selecionado
-- [ ] Adicionar navegação de mês anterior/próximo
+**Componentes de Cards:**
+
+- [ ] Criar componente `CardResumoOrcamentos.jsx` em `views/Dashboard/components/`
+- [ ] Exibir total de orçamentos ativos, quantidade em produção com ícones e badges coloridos
+- [ ] Criar lista de orçamentos próximos da entrega com cliente e data
+- [ ] Criar componente `CardProjecaoFinanceira.jsx` em `views/Dashboard/components/`
+- [ ] Exibir receita prevista, despesa prevista e saldo projetado com cores condicionais (verde para positivo, vermelho para negativo)
+- [ ] Adicionar indicador visual de percentual de margem
+
+**Componente de Calendário:**
+
+- [ ] Criar componente `CalendarioFinanceiro.jsx` em `views/Dashboard/components/`
+- [ ] Implementar hook customizado `useCalendario` para gerenciar estado do mês/ano atual
+- [ ] Renderizar grid de calendário com cabeçalho de dias da semana
+- [ ] Implementar lógica para calcular primeiro dia do mês e total de dias
+- [ ] Criar componente `DiaCelula.jsx` para cada célula do calendário
+- [ ] Implementar lógica de estilo condicional: borda verde para dias com entradas, borda vermelha para saídas, borda amarela para ambos
+- [ ] Adicionar indicadores visuais (badges ou ícones) mostrando quantidade de transações
+- [ ] Implementar navegação de mês anterior/próximo com botões e atualização de estado
+
+**Modal de Detalhes:**
+
+- [ ] Criar componente `ModalDetalheDia.jsx` em `views/Dashboard/components/`
+- [ ] Exibir cabeçalho com data formatada do dia selecionado
+- [ ] Criar seção separada para Entradas com lista de `TransacaoDTO` tipo ENTRADA
+- [ ] Criar seção separada para Saídas com lista de `TransacaoDTO` tipo SAIDA
+- [ ] Renderizar cada transação em linha individual mostrando descrição, origem e valor formatado
+- [ ] Adicionar total por seção (Entradas e Saídas) no rodapé de cada lista
+- [ ] Implementar fechamento do modal ao clicar fora ou no botão fechar
+
+**Integração e Estado:**
+
+- [ ] Criar service `dashboardService.js` com métodos para chamar os 3 endpoints
+- [ ] Implementar estado global ou local para armazenar mês/ano selecionado
+- [ ] Adicionar loading states para cada card e calendário durante fetch de dados
+- [ ] Implementar tratamento de erros com mensagens amigáveis via Snackbar
+- [ ] Adicionar refresh automático ou manual dos dados do dashboard
 
 ---
 
