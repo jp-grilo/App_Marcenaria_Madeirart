@@ -23,6 +23,7 @@ import orcamentoService from "../../services/orcamentoService";
 import { formatCurrency, formatDate } from "../../utils/formatters";
 import { STATUS_LABELS, STATUS_CORES } from "../../utils/constants";
 import IniciarProducaoDialog from "./dialogs/IniciarProducaoDialog";
+import AlterarStatusDialog from "./dialogs/AlterarStatusDialog";
 
 export default function OrcamentosList() {
   const navigate = useNavigate();
@@ -32,6 +33,7 @@ export default function OrcamentosList() {
   const [error, setError] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [orcamentoSelecionado, setOrcamentoSelecionado] = useState(null);
+  const [dialogStatusOpen, setDialogStatusOpen] = useState(false);
 
   useEffect(() => {
     const carregarOrcamentos = async () => {
@@ -63,6 +65,31 @@ export default function OrcamentosList() {
   const handleFecharDialog = () => {
     setDialogOpen(false);
     setOrcamentoSelecionado(null);
+  };
+
+  const handleAbrirDialogStatus = (orcamento) => {
+    setOrcamentoSelecionado(orcamento);
+    setDialogStatusOpen(true);
+  };
+
+  const handleFecharDialogStatus = () => {
+    setDialogStatusOpen(false);
+    setOrcamentoSelecionado(null);
+  };
+
+  const handleAlterarStatus = async (novoStatus) => {
+    try {
+      await orcamentoService.alterarStatus(orcamentoSelecionado.id, novoStatus);
+      showSuccess("Status alterado com sucesso!");
+      handleFecharDialogStatus();
+
+      // Recarregar a lista
+      const orcamentosAtualizados = await orcamentoService.listar();
+      setOrcamentos(orcamentosAtualizados);
+    } catch (err) {
+      console.error("Erro ao alterar status:", err);
+      showError("Erro ao alterar status do orçamento");
+    }
   };
 
   const handleIniciarProducao = async (dados) => {
@@ -164,6 +191,7 @@ export default function OrcamentosList() {
               <TableCell sx={{ fontWeight: "bold" }}>Data</TableCell>
               <TableCell sx={{ fontWeight: "bold" }}>Valor Total</TableCell>
               <TableCell sx={{ fontWeight: "bold" }}>Status</TableCell>
+              <TableCell sx={{ fontWeight: "bold" }}>% Pago</TableCell>
               <TableCell sx={{ fontWeight: "bold", width: "120px" }}>
                 Ações
               </TableCell>
@@ -172,7 +200,7 @@ export default function OrcamentosList() {
           <TableBody>
             {orcamentos.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} align="center" sx={{ py: 4 }}>
+                <TableCell colSpan={7} align="center" sx={{ py: 4 }}>
                   <Typography color="text.secondary">
                     Nenhum orçamento cadastrado. Clique em "Novo Orçamento" para
                     começar.
@@ -193,7 +221,29 @@ export default function OrcamentosList() {
                       label={STATUS_LABELS[orcamento.status]}
                       color={STATUS_CORES[orcamento.status]}
                       size="small"
+                      onClick={() => handleAbrirDialogStatus(orcamento)}
+                      sx={{ cursor: "pointer" }}
                     />
+                  </TableCell>
+                  <TableCell>
+                    <Typography
+                      variant="body2"
+                      sx={{
+                        fontWeight: 600,
+                        color:
+                          orcamento.statusRecebimento?.percentualRecebido >= 100
+                            ? "success.main"
+                            : orcamento.statusRecebimento?.percentualRecebido >=
+                                50
+                              ? "warning.main"
+                              : "error.main",
+                      }}
+                    >
+                      {orcamento.statusRecebimento?.percentualRecebido?.toFixed(
+                        1,
+                      ) || "0.0"}
+                      %
+                    </Typography>
                   </TableCell>
                   <TableCell>
                     <Box sx={{ display: "flex", gap: 1 }}>
@@ -261,6 +311,13 @@ export default function OrcamentosList() {
         onClose={handleFecharDialog}
         orcamento={orcamentoSelecionado}
         onConfirm={handleIniciarProducao}
+      />
+
+      <AlterarStatusDialog
+        open={dialogStatusOpen}
+        onClose={handleFecharDialogStatus}
+        orcamento={orcamentoSelecionado}
+        onConfirm={handleAlterarStatus}
       />
     </Box>
   );
