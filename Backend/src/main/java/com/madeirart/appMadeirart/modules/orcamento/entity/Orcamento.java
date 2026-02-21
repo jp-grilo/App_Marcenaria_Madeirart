@@ -6,6 +6,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
@@ -20,6 +21,7 @@ import java.util.List;
 @Entity
 @Table(name = "orcamentos")
 @Data
+@Builder
 @NoArgsConstructor
 @AllArgsConstructor
 public class Orcamento {
@@ -60,6 +62,7 @@ public class Orcamento {
     @Column(nullable = false, length = 20)
     private StatusOrcamento status;
 
+    @Builder.Default
     @OneToMany(mappedBy = "orcamento", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<ItemMaterial> itens = new ArrayList<>();
 
