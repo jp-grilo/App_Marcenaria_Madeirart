@@ -14,6 +14,7 @@ import {
   Dashboard,
   Assignment,
   AccountBalanceWallet,
+  TrendingUp,
   Settings,
 } from "@mui/icons-material";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -24,6 +25,7 @@ const menuItems = [
   { text: "Dashboard", icon: <Dashboard />, path: "/" },
   { text: "Orçamentos", icon: <Assignment />, path: "/orcamentos" },
   { text: "Custos", icon: <AccountBalanceWallet />, path: "/custos" },
+  { text: "Projeção de Caixa", icon: <TrendingUp />, path: "/projecao-caixa" },
 ];
 
 export default function Sidebar() {

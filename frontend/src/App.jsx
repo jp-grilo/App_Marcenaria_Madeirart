@@ -10,6 +10,7 @@ import {
   OrcamentoDetalhes,
 } from "./views/Orcamentos";
 import { CustosList, CustoForm } from "./views/Custos";
+import { ProjecaoCaixa } from "./views/ProjecaoCaixa";
 
 const theme = createTheme({
   palette: {
@@ -45,6 +46,7 @@ function App() {
               <Route path="/custos" element={<CustosList />} />
               <Route path="/custos/novo" element={<CustoForm />} />
               <Route path="/custos/:tipo/:id/editar" element={<CustoForm />} />
+              <Route path="/projecao-caixa" element={<ProjecaoCaixa />} />
               <Route
                 path="/calendario"
                 element={<div>Calendário em desenvolvimento</div>}
