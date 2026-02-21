@@ -1,0 +1,29 @@
+{
+  "resources": {
+    "includes": [
+      {
+        "pattern": "application.properties"
+      },
+      {
+        "pattern": "application-*.properties"
+      },
+      {
+        "pattern": "db/migration/.*"
+      },
+      {
+        "pattern": "META-INF/.*"
+      },
+      {
+        "pattern": "org/hibernate/.*"
+      },
+      {
+        "pattern": "org/sqlite/.*"
+      }
+    ]
+  },
+  "bundles": [
+    {
+      "name": "messages"
+    }
+  ]
+}

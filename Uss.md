@@ -335,10 +335,10 @@ Como desenvolvedor, quero compilar o backend Spring Boot para um executável nat
 
 **Configuração de Ambiente:**
 
-- [ ] Baixar e instalar GraalVM 22+ para Windows (https://www.graalvm.org/downloads/)
-- [ ] Configurar variáveis de ambiente `JAVA_HOME` apontando para GraalVM
-- [ ] Adicionar GraalVM `bin` ao `PATH` do sistema
-- [ ] Verificar instalação com `native-image --version`
+- [x] Baixar e instalar GraalVM 22+ para Windows (https://www.graalvm.org/downloads/)
+- [x] Configurar variáveis de ambiente `JAVA_HOME` apontando para GraalVM
+- [x] Adicionar GraalVM `bin` ao `PATH` do sistema
+- [x] Verificar instalação com `native-image --version`
 
 **Configuração do Projeto:**
 

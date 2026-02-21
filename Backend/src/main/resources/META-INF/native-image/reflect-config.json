@@ -1,0 +1,224 @@
+[
+  {
+    "name": "com.madeirart.appMadeirart.modules.orcamento.entity.Orcamento",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.orcamento.entity.ItemMaterial",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.orcamento.entity.Parcela",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.orcamento.entity.OrcamentoAuditoria",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.custos.entity.CustoFixo",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.custos.entity.CustoVariavel",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.financeiro.entity.SaldoInicial",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoRequestDTO",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoResponseDTO",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.orcamento.dto.ItemMaterialDTO",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.orcamento.dto.ParcelaDTO",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.orcamento.dto.ParcelaResponseDTO",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.orcamento.dto.IniciarProducaoDTO",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.orcamento.dto.StatusRecebimentoDTO",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoAuditoriaDTO",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.custos.dto.CustoFixoRequestDTO",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.custos.dto.CustoFixoResponseDTO",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.custos.dto.CustoVariavelRequestDTO",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.custos.dto.CustoVariavelResponseDTO",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.dashboard.dto.DashboardResumoDTO",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.dashboard.dto.ProjecaoFinanceiraDTO",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.dashboard.dto.CalendarioDTO",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.dashboard.dto.DiaDadosDTO",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.dashboard.dto.TransacaoDTO",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.dashboard.dto.OrcamentoResumoDTO",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.financeiro.dto.SaldoInicialRequestDTO",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.financeiro.dto.SaldoInicialResponseDTO",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.financeiro.dto.ProjecaoCaixaDTO",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.financeiro.dto.MesProjecaoDTO",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.backup.dto.BackupResponseDTO",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.backup.dto.BackupInfoDTO",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.shared.enums.StatusOrcamento",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.shared.enums.StatusParcela",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.shared.enums.FormaPagamento",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.shared.enums.StatusCusto",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.shared.enums.TipoTransacao",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  },
+  {
+    "name": "com.madeirart.appMadeirart.shared.enums.OrigemTransacao",
+    "allDeclaredConstructors": true,
+    "allDeclaredMethods": true,
+    "allDeclaredFields": true
+  }
+]

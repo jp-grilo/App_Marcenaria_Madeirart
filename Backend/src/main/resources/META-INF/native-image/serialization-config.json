@@ -1,0 +1,71 @@
+[
+  {
+    "name": "com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoRequestDTO"
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoResponseDTO"
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.orcamento.dto.ItemMaterialDTO"
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.orcamento.dto.ParcelaDTO"
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.orcamento.dto.ParcelaResponseDTO"
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.orcamento.dto.IniciarProducaoDTO"
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.orcamento.dto.StatusRecebimentoDTO"
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.orcamento.dto.OrcamentoAuditoriaDTO"
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.custos.dto.CustoFixoRequestDTO"
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.custos.dto.CustoFixoResponseDTO"
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.custos.dto.CustoVariavelRequestDTO"
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.custos.dto.CustoVariavelResponseDTO"
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.dashboard.dto.DashboardResumoDTO"
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.dashboard.dto.ProjecaoFinanceiraDTO"
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.dashboard.dto.CalendarioDTO"
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.dashboard.dto.DiaDadosDTO"
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.dashboard.dto.TransacaoDTO"
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.dashboard.dto.OrcamentoResumoDTO"
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.backup.dto.BackupResponseDTO"
+  },
+  {
+    "name": "com.madeirart.appMadeirart.modules.backup.dto.BackupInfoDTO"
+  },
+  {
+    "name": "java.util.ArrayList"
+  },
+  {
+    "name": "java.util.HashMap"
+  },
+  {
+    "name": "java.util.LinkedHashMap"
+  }
+]
