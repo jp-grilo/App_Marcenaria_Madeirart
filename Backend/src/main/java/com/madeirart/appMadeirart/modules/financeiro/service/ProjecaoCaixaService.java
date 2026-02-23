@@ -199,7 +199,7 @@ public class ProjecaoCaixaService {
                 .filter(p -> !p.getDataVencimento().isBefore(primeiroDia) && !p.getDataVencimento().isAfter(ultimoDia))
                 .map(p -> ItemProjecaoDTO.builder()
                         .id(p.getId())
-                        .descricao("Parcela " + p.getNumeroParcela() + " - Orçamento #" + p.getOrcamento().getId())
+                        .descricao("Parcela " + p.getNumeroParcela() + " - Orçamento " + p.getOrcamento().getCliente())
                         .valor(p.getValor())
                         .data(p.getDataVencimento())
                         .origem(OrigemTransacao.PARCELA)

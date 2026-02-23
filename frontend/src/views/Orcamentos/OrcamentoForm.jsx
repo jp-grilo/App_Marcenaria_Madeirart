@@ -112,22 +112,22 @@ export default function OrcamentoForm() {
 
   const calcularSubtotalMateriais = () => {
     return itens.reduce((total, item) => {
-      const quantidade = parseFloat(item.quantidade) || 0;
-      const valorUnitario = parseFloat(item.valorUnitario) || 0;
+      const quantidade = parseFloat(item.quantidade.toString().replace(',', '.')) || 0;
+      const valorUnitario = parseFloat(item.valorUnitario.toString().replace(',', '.')) || 0;
       return total + quantidade * valorUnitario;
     }, 0);
   };
 
   const calcularValorMaoDeObra = () => {
     const subtotal = calcularSubtotalMateriais();
-    const fator = parseFloat(formData.fatorMaoDeObra) || 0;
+    const fator = parseFloat(formData.fatorMaoDeObra.toString().replace(',', '.')) || 0;
     return subtotal * fator;
   };
 
   const calcularValorTotal = () => {
     const custoObra = calcularValorMaoDeObra();
-    const custosExtras = parseFloat(formData.custosExtras) || 0;
-    const cpc = parseFloat(formData.cpc) || 0;
+    const custosExtras = parseFloat(formData.custosExtras.toString().replace(',', '.')) || 0;
+    const cpc = parseFloat(formData.cpc.toString().replace(',', '.')) || 0;
     return custoObra + custosExtras + cpc;
   };
 
@@ -146,7 +146,7 @@ export default function OrcamentoForm() {
     if (!formData.previsaoEntrega) {
       novosErros.previsaoEntrega = "Previsão de entrega é obrigatória";
     }
-    if (!formData.fatorMaoDeObra || parseFloat(formData.fatorMaoDeObra) < 1) {
+    if (!formData.fatorMaoDeObra || parseFloat(formData.fatorMaoDeObra.toString().replace(',', '.')) < 1) {
       novosErros.fatorMaoDeObra =
         "Fator de mão de obra deve ser maior ou igual a 1";
     }
@@ -154,10 +154,10 @@ export default function OrcamentoForm() {
     const itensValidos = itens.every(
       (item) =>
         item.quantidade &&
-        parseFloat(item.quantidade) > 0 &&
+        parseFloat(item.quantidade.toString().replace(',', '.')) > 0 &&
         item.descricao.trim() &&
         item.valorUnitario &&
-        parseFloat(item.valorUnitario) >= 0,
+        parseFloat(item.valorUnitario.toString().replace(',', '.')) >= 0,
     );
 
     if (!itensValidos) {
@@ -186,13 +186,13 @@ export default function OrcamentoForm() {
         moveis: formData.moveis,
         data: formData.data,
         previsaoEntrega: formData.previsaoEntrega,
-        fatorMaoDeObra: parseFloat(formData.fatorMaoDeObra),
-        custosExtras: parseFloat(formData.custosExtras) || 0,
-        cpc: parseFloat(formData.cpc) || 0,
+        fatorMaoDeObra: parseFloat(formData.fatorMaoDeObra.toString().replace(',', '.')),
+        custosExtras: parseFloat(formData.custosExtras.toString().replace(',', '.')) || 0,
+        cpc: parseFloat(formData.cpc.toString().replace(',', '.')) || 0,
         itens: itens.map((item) => ({
-          quantidade: parseFloat(item.quantidade),
+          quantidade: parseFloat(item.quantidade.toString().replace(',', '.')),
           descricao: item.descricao,
-          valorUnitario: parseFloat(item.valorUnitario),
+          valorUnitario: parseFloat(item.valorUnitario.toString().replace(',', '.')),
         })),
       };
 
@@ -309,7 +309,6 @@ export default function OrcamentoForm() {
             <Grid2 item xs={12} md={4}>
               <TextField
                 fullWidth
-                type="number"
                 label="Fator de Mão de Obra"
                 name="fatorMaoDeObra"
                 value={formData.fatorMaoDeObra}
@@ -317,9 +316,9 @@ export default function OrcamentoForm() {
                 error={!!errors.fatorMaoDeObra}
                 helperText={
                   errors.fatorMaoDeObra ||
-                  "Ex: 1.5 (150% do custo dos materiais)"
+                  "Ex: 1.5 ou 1,5 (150% dos materiais)"
                 }
-                inputProps={{ step: "0.1", min: "0" }}
+                placeholder="Ex: 2,5"
                 required
               />
             </Grid2>
@@ -327,12 +326,11 @@ export default function OrcamentoForm() {
             <Grid2 item xs={12} md={4}>
               <TextField
                 fullWidth
-                type="number"
                 label="Custos Extras"
                 name="custosExtras"
                 value={formData.custosExtras}
                 onChange={handleChange}
-                inputProps={{ step: "10", min: "0" }}
+                placeholder="Ex: 100 ou 100,50"
                 helperText="Valores adicionais"
               />
             </Grid2>
@@ -340,12 +338,11 @@ export default function OrcamentoForm() {
             <Grid2 item xs={12} md={4}>
               <TextField
                 fullWidth
-                type="number"
                 label="CPC"
                 name="cpc"
                 value={formData.cpc}
                 onChange={handleChange}
-                inputProps={{ step: "10", min: "0" }}
+                placeholder="Ex: 150 ou 150,50"
                 helperText="Cola, parafuso, carreto"
               />
             </Grid2>
@@ -401,20 +398,19 @@ export default function OrcamentoForm() {
               <TableBody>
                 {itens.map((item, index) => {
                   const subtotal =
-                    (parseFloat(item.quantidade) || 0) *
-                    (parseFloat(item.valorUnitario) || 0);
+                    (parseFloat(item.quantidade.toString().replace(',', '.')) || 0) *
+                    (parseFloat(item.valorUnitario.toString().replace(',', '.')) || 0);
 
                   return (
                     <TableRow key={index}>
                       <TableCell>
                         <TextField
                           fullWidth
-                          type="number"
                           value={item.quantidade}
                           onChange={(e) =>
                             atualizarItem(index, "quantidade", e.target.value)
                           }
-                          inputProps={{ min: "0" }}
+                          placeholder="Ex: 3 ou 2,5"
                           size="small"
                         />
                       </TableCell>
@@ -432,7 +428,6 @@ export default function OrcamentoForm() {
                       <TableCell>
                         <TextField
                           fullWidth
-                          type="number"
                           value={item.valorUnitario}
                           onChange={(e) =>
                             atualizarItem(
@@ -441,7 +436,7 @@ export default function OrcamentoForm() {
                               e.target.value,
                             )
                           }
-                          inputProps={{ min: "0" }}
+                          placeholder="Ex: 270 ou 270,50"
                           size="small"
                         />
                       </TableCell>

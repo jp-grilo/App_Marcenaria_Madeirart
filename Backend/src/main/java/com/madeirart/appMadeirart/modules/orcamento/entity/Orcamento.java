@@ -127,14 +127,13 @@ public class Orcamento {
 
     /**
      * Calcula o valor total do orçamento
-     * Total = Subtotal Materiais + Mão de Obra + Custos Extras + CPC
+     * Total = Mão de Obra + Custos Extras + CPC
      */
     public BigDecimal calcularValorTotal() {
-        BigDecimal subtotal = calcularSubtotalMateriais();
         BigDecimal maoDeObra = calcularValorMaoDeObra();
         BigDecimal extras = custosExtras != null ? custosExtras : BigDecimal.ZERO;
         BigDecimal cpcValor = cpc != null ? cpc : BigDecimal.ZERO;
         
-        return subtotal.add(maoDeObra).add(extras).add(cpcValor);
+        return maoDeObra.add(extras).add(cpcValor);
     }
 }
