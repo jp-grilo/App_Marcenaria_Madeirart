@@ -9,10 +9,18 @@ echo.
 
 REM Verificar se GraalVM esta instalado
 echo [1/4] Verificando GraalVM...
+echo JAVA_HOME: %JAVA_HOME%
+echo.
+
 java -version 2>&1 | findstr /C:"GraalVM" > nul
 if %errorlevel% neq 0 (
     echo ERRO: GraalVM nao encontrado!
+    echo.
+    echo Versao Java atual:
+    java -version 2>&1
+    echo.
     echo Verifique se JAVA_HOME esta configurado para o GraalVM.
+    echo Se ja configurou, reinicie o VSCode ou execute em um terminal externo.
     exit /b 1
 )
 
@@ -24,6 +32,7 @@ if %errorlevel% neq 0 (
 )
 
 echo GraalVM detectado com sucesso!
+native-image --version
 echo.
 
 REM Compilar projeto
