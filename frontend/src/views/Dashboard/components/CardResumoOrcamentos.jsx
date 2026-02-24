@@ -69,8 +69,11 @@ export default function CardResumoOrcamentos({ resumo, loading, error }) {
   const getDiasParaEntrega = (dataEntrega) => {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
-    const entrega = new Date(dataEntrega);
+
+    const [ano, mes, dia] = dataEntrega.split("-").map(Number);
+    const entrega = new Date(ano, mes - 1, dia);
     entrega.setHours(0, 0, 0, 0);
+
     const diffTime = entrega - hoje;
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
     return diffDays;
@@ -80,10 +83,7 @@ export default function CardResumoOrcamentos({ resumo, loading, error }) {
    * Formata data para dd/MM/yyyy
    */
   const formatarData = (data) => {
-    const date = new Date(data);
-    const dia = String(date.getDate()).padStart(2, "0");
-    const mes = String(date.getMonth() + 1).padStart(2, "0");
-    const ano = date.getFullYear();
+    const [ano, mes, dia] = data.split("-");
     return `${dia}/${mes}/${ano}`;
   };
 
