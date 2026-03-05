@@ -602,3 +602,409 @@ Como usuário, quero que o sistema faça backup automático do meu banco de dado
 - [ ] Testar rotação de backups (criar mais de 10 e verificar exclusão)
 - [ ] Validar funcionamento em cenários de erro (disco cheio, sem permissões)
 - [ ] Testar restauração de backup em nova instalação
+
+---
+
+## Épico 8: Migração de SQLite para PostgreSQL no Docker
+
+### US17: Configuração de PostgreSQL no Docker Compartilhado
+
+**Descrição:**
+
+Como desenvolvedor, quero migrar o sistema de SQLite local para PostgreSQL no Docker, compartilhando a mesma instância de banco de dados com outro projeto (GiborBallet) através de schemas separados, para permitir deploy online da aplicação.
+
+### Critérios de Aceite
+
+- Um único container PostgreSQL deve rodar com dois schemas: `giborballet` e `madeirart`
+- O schema `madeirart` deve ser criado automaticamente na inicialização do container
+- Todas as entidades e relacionamentos devem funcionar corretamente no PostgreSQL
+- Os dados de desenvolvimento devem ser facilmente limpos/resetados durante testes
+- O sistema deve iniciar sem erros com o PostgreSQL no Docker
+- Migrations/esquema do banco devem ser gerenciados automaticamente (Flyway ou Hibernate)
+
+### Tarefas de Infraestrutura (Docker)
+
+**Atualização do docker-compose.yml:**
+
+- [ ] Adicionar volume para script de inicialização: `./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql`
+- [ ] Manter porta `5432:5432` exposta para acesso local
+- [ ] Verificar se variáveis de ambiente estão corretas (POSTGRES_USER=gibor, POSTGRES_PASSWORD=secret)
+
+**Criação do Script de Inicialização:**
+
+- [ ] Criar arquivo `init-db.sql` na raiz do projeto Madeirart (não no GiborBallet)
+- [ ] Adicionar comando para criar schema: `CREATE SCHEMA IF NOT EXISTS madeirart;`
+- [ ] Garantir permissões ao usuário gibor: `GRANT ALL PRIVILEGES ON SCHEMA madeirart TO gibor;`
+- [ ] Configurar search_path para incluir o schema madeirart
+- [ ] Adicionar grants para tabelas e sequences no schema
+
+### Tarefas Backend (Spring Boot)
+
+**Atualização de Dependências:**
+
+- [ ] Adicionar dependência `org.postgresql:postgresql` no `pom.xml`
+- [ ] Remover dependência `sqlite-jdbc` se existir
+- [ ] Adicionar dependência `org.flywaydb:flyway-core` para gerenciar migrations (opcional mas recomendado)
+- [ ] Verificar compatibilidade de versões (Spring Boot 3.x + PostgreSQL driver)
+
+**Configuração do application.properties:**
+
+- [ ] Atualizar `spring.datasource.url` para `jdbc:postgresql://localhost:5432/giborballet?currentSchema=madeirart`
+- [ ] Configurar `spring.datasource.username=gibor`
+- [ ] Configurar `spring.datasource.password=secret`
+- [ ] Alterar `spring.datasource.driver-class-name` para `org.postgresql.Driver`
+- [ ] Mudar `spring.jpa.database-platform` para `org.hibernate.dialect.PostgreSQLDialect`
+- [ ] Adicionar `spring.jpa.properties.hibernate.default_schema=madeirart`
+- [ ] Configurar `spring.jpa.hibernate.ddl-auto=update` (ou `validate` em produção)
+- [ ] Adicionar configurações de connection pool (HikariCP)
+
+**Criação de Perfis de Ambiente:**
+
+- [ ] Criar `application-dev.properties` com configurações de desenvolvimento (DDL auto-create)
+- [ ] Criar `application-prod.properties` com configurações de produção (DDL validate)
+- [ ] Configurar variáveis de ambiente para dados sensíveis (senha do BD)
+- [ ] Documentar perfis no README.md do projeto
+
+**Ajustes em Entidades JPA:**
+
+- [ ] Revisar todas as entidades (`@Entity`) e adicionar `schema = "madeirart"` na anotação `@Table`
+- [ ] Exemplo: `@Table(name = "orcamento", schema = "madeirart")`
+- [ ] Fazer o mesmo para todas as entidades: `Parcela`, `CustoFixo`, `CustoVariavel`, etc.
+- [ ] Verificar estratégias de geração de ID (PostgreSQL usa `IDENTITY` ou `SEQUENCE`)
+- [ ] Atualizar `@GeneratedValue(strategy = GenerationType.IDENTITY)` se necessário
+- [ ] Remover anotações específicas de SQLite, se houver
+
+**Migrations com Flyway (Recomendado):**
+
+- [ ] Criar pasta `src/main/resources/db/migration/`
+- [ ] Criar migration inicial `V1__criar_schema_inicial.sql` com DDL de todas as tabelas
+- [ ] Incluir criação de índices e constraints (foreign keys, unique, etc.)
+- [ ] Adicionar migration para dados de seed se necessário: `V2__dados_iniciais.sql`
+- [ ] Configurar Flyway no `application.properties`:
+  - `spring.flyway.enabled=true`
+  - `spring.flyway.baseline-on-migrate=true`
+  - `spring.flyway.locations=classpath:db/migration`
+  - `spring.flyway.schemas=madeirart`
+
+**Ajustes de Tipos de Dados:**
+
+- [ ] Verificar compatibilidade de tipos entre SQLite e PostgreSQL:
+  - `TEXT` → `VARCHAR` ou `TEXT`
+  - `INTEGER` → `INTEGER` ou `BIGINT`
+  - `REAL` → `NUMERIC` ou `DECIMAL` (para valores monetários)
+  - `BOOLEAN` → `BOOLEAN` (nativo no PostgreSQL)
+  - `DATETIME` → `TIMESTAMP`
+- [ ] Atualizar anotações JPA se necessário (`@Column(columnDefinition = "...")`)
+- [ ] Usar `BigDecimal` para valores monetários ao invés de `Double`
+
+**Configuração de Backup (Atualização):**
+
+- [ ] Atualizar `BackupService` para usar `pg_dump` ao invés de cópia de arquivo
+- [ ] Implementar comando: `docker exec madeirart-db pg_dump -U gibor -d giborballet --schema=madeirart`
+- [ ] Atualizar lógica de restore para importar via `psql`
+- [ ] Testar backup e restore com PostgreSQL
+
+### Tarefas de Teste e Validação
+
+**Testes de Conexão:**
+
+- [ ] Iniciar container Docker: `docker-compose up -d`
+- [ ] Verificar criação do schema: `docker exec -it [container] psql -U gibor -d giborballet -c "\dn"`
+- [ ] Conectar ao banco via cliente SQL (DBeaver, pgAdmin) e verificar schema `madeirart`
+- [ ] Testar inicialização do backend Spring Boot
+
+**Testes de Funcionalidades:**
+
+- [ ] Executar aplicação e verificar criação de tabelas no schema correto
+- [ ] Testar CRUD de Orçamentos (criar, listar, editar, deletar)
+- [ ] Testar CRUD de Custos Fixos e Variáveis
+- [ ] Testar criação e confirmação de Parcelas
+- [ ] Verificar queries do Dashboard (projeções, calendário)
+- [ ] Validar cálculos financeiros com valores decimais (precisão monetária)
+- [ ] Testar relacionamentos JPA (joins, lazy/eager loading)
+
+**Testes de Performance:**
+
+- [ ] Inserir volume médio de dados (100+ orçamentos, 500+ parcelas)
+- [ ] Medir tempo de resposta das principais queries
+- [ ] Verificar uso de índices (explain analyze no PostgreSQL)
+- [ ] Validar que não há N+1 queries
+
+**Testes de Integração:**
+
+- [ ] Validar que os dois schemas (giborballet e madeirart) coexistem sem conflitos
+- [ ] Testar conexões simultâneas de ambos os projetos
+- [ ] Verificar isolamento de dados entre schemas
+- [ ] Testar backup de schema específico sem afetar o outro
+
+### Tarefas de Documentação
+
+
+### Tarefas de Migração de Dados (Se houver dados existentes)
+
+**Se já existem dados em SQLite:**
+
+- [ ] Criar script de export de dados do SQLite para SQL
+- [ ] Ajustar script para syntax do PostgreSQL (aspas, tipos, etc.)
+- [ ] Criar migration Flyway com os dados exportados
+- [ ] Validar integridade referencial após importação
+- [ ] Testar aplicação com dados migrados
+
+---
+
+## Épico 9: Autenticação e Segurança
+
+### US18: Cadastro e Gestão de Usuários
+
+**Descrição:**
+
+Como administrador do sistema, quero cadastrar usuários com credenciais seguras para controlar quem tem acesso à aplicação, garantindo que apenas pessoas autorizadas possam visualizar e manipular os dados financeiros.
+
+### Critérios de Aceite
+
+- Cada usuário deve ter: nome, senha (criptografada) e status (ativo/inativo)
+- Senhas devem ser criptografadas com BCrypt antes de serem armazenadas
+- O sistema deve validar força mínima da senha (8+ caracteres, letras e números)
+- Primeiro usuário criado no sistema deve automaticamente ter privilégios de admin
+- Admin deve poder ativar/desativar usuários sem excluí-los do banco
+
+### Tarefas Backend (Spring Boot)
+
+**Entidades e Repositórios:**
+
+- [ ] Criar entidade `Usuario` com campos: id, nomeCompleto, username(unique), senha, ativo (boolean), dataCriacao, dataUltimoAcesso
+- [ ] Adicionar enum `PerfilAcesso` (ADMIN, USUARIO) para controle futuro de permissões
+- [ ] Criar campo `perfil` na entidade Usuario
+- [ ] Criar `UsuarioRepository` extends `JpaRepository<Usuario, Long>`
+- [ ] Adicionar método customizado `Optional<Usuario> findByUsername(String username)`
+- [ ] Adicionar método `boolean existsByUsername(String username)`
+
+**DTOs:**
+
+- [ ] Criar `UsuarioCadastroDTO` com campos: nomeCompleto, username, senha, confirmacaoSenha
+- [ ] Criar `UsuarioResponseDTO` com campos: id, nomeCompleto, username, ativo, perfil, dataCriacao (sem senha)
+- [ ] Criar validações com Bean Validation (@NotBlank, @Size, etc.)
+- [ ] Implementar validação customizada para força de senha
+
+**Services:**
+
+- [ ] Criar `UsuarioService` com injeção de `PasswordEncoder` (BCrypt)
+- [ ] Implementar método `cadastrarUsuario(UsuarioCadastroDTO dto)` que:
+  - Verifica se senha e confirmação são iguais
+  - Valida força da senha
+  - Criptografa a senha com BCrypt
+  - Se for o primeiro usuário, define perfil como ADMIN
+  - Salva o usuário no banco
+- [ ] Implementar método `listarUsuarios()` retornando lista de `UsuarioResponseDTO`
+- [ ] Implementar método `ativarDesativarUsuario(Long id, boolean ativo)`
+
+**Endpoints:**
+
+- [ ] Criar `UsuarioController` com mapeamento `/api/usuarios`
+- [ ] Endpoint `POST /api/usuarios/cadastro` para criar novo usuário
+- [ ] Endpoint `GET /api/usuarios` para listar todos usuários (apenas admin)
+- [ ] Endpoint `PATCH /api/usuarios/{id}/status` para ativar/desativar (apenas admin)
+- [ ] Endpoint `GET /api/usuarios/me` para retornar dados do usuário logado
+
+**Configuração de Segurança:**
+
+- [ ] Adicionar dependência `spring-boot-starter-security` no pom.xml
+- [ ] Criar bean `PasswordEncoder` usando `BCryptPasswordEncoder`
+- [ ] Configurar endpoints públicos (login, primeiro cadastro) e protegidos
+
+### Tarefas Frontend (React)
+
+**Componentes e Views:**
+
+- [ ] Criar view `views/Auth/CadastroUsuario.jsx` com formulário de cadastro
+- [ ] Implementar campos: Nome, Senha, Confirmar Senha
+- [ ] Adicionar validação de força de senha com indicador visual (barra de progresso)
+- [ ] Mostrar mensagens de erro específicas
+- [ ] Criar view `views/Usuarios/UsuariosList.jsx` (apenas para admin)
+- [ ] Implementar tabela com colunas: Nome, Perfil, Status, Ações
+- [ ] Adicionar botão de ativar/desativar com confirmação
+
+**Services:**
+
+- [ ] Criar `authService.js` com métodos:
+  - `cadastrarUsuario(dados)`
+  - `listarUsuarios()`
+  - `alterarStatusUsuario(id, ativo)`
+
+**Validações:**
+
+- [ ] Implementar hook customizado `usePasswordStrength` para validação de senha
+- [ ] Adicionar feedback visual de força (fraca/média/forte)
+
+---
+
+### US19: Sistema de Login e Autenticação JWT
+
+**Descrição:**
+
+Como usuário cadastrado, quero fazer login com meu username e senha para acessar o sistema de forma segura, recebendo um token de autenticação que identifique minhas ações.
+
+### Critérios de Aceite
+
+- O usuário deve poder fazer login com username e senha
+- Após login bem-sucedido, o sistema deve retornar um token JWT válido por 12 horas
+- O token deve conter: id do usuário, username, perfil de acesso e data de expiração
+- Credenciais inválidas devem retornar erro 401 com mensagem clara
+- Usuários inativos não devem conseguir fazer login
+- O sistema deve atualizar o campo `dataUltimoAcesso` a cada login bem-sucedido
+
+### Tarefas Backend (Spring Boot)
+
+**Configuração de JWT:**
+
+- [ ] Adicionar <dependency> <groupId>com.auth0</groupId> <artifactId>java-jwt</artifactId> <version>4.4.0</version> </dependency> no pom.xml
+- [ ] Criar classe `JwtUtil` com métodos:
+  - `generateToken(Usuario usuario)` - gera JWT com claims customizados
+  - `extractUsername(String token)` - extrai username do token
+  - `validateToken(String token, UserDetails userDetails)` - valida token
+  - `extractExpiration(String token)` - verifica se token expirou
+- [ ] Configurar chave secreta do JWT no `application.properties` (usar variável de ambiente em produção)
+- [ ] Definir tempo de expiração de 8 horas
+
+**DTOs:**
+
+- [ ] Criar `LoginRequestDTO` com campos: username, senha
+- [ ] Criar `LoginResponseDTO` com campos: token, tipo ("Bearer"), usuario (UsuarioResponseDTO)
+- [ ] Adicionar validações com Bean Validation
+
+**Services:**
+
+- [ ] Criar `AuthService` com método `autenticar(LoginRequestDTO dto)` que:
+  - Busca usuário por username
+  - Verifica se usuário existe e está ativo
+  - Valida senha usando `PasswordEncoder.matches()`
+  - Atualiza campo `dataUltimoAcesso`
+  - Gera token JWT
+  - Retorna LoginResponseDTO
+- [ ] Implementar tratamento de exceções específicas (UsernameNaoEncontradoException, UsuarioInativoException, SenhaInvalidaException)
+
+**Filtros de Segurança:**
+
+- [ ] Criar `JwtAuthenticationFilter` extends `OncePerRequestFilter` que:
+  - Extrai token do header Authorization
+  - Valida token usando JwtUtil
+  - Carrega UserDetails do usuário
+  - Define autenticação no SecurityContextHolder
+- [ ] Criar `CustomUserDetailsService` implements `UserDetailsService` que carrega usuário por username
+
+**Endpoints:**
+
+- [ ] Criar `AuthController` com mapeamento `/api/auth`
+- [ ] Endpoint `POST /api/auth/login` (público) para autenticação
+- [ ] Endpoint `POST /api/auth/logout` para invalidar token (opcional)
+- [ ] Endpoint `POST /api/auth/refresh` para renovar token próximo da expiração (opcional)
+
+**Configuração de Segurança:**
+
+- [ ] Criar classe `SecurityConfig` com `@EnableWebSecurity`
+- [ ] Configurar chain de filtros adicionando `JwtAuthenticationFilter`
+- [ ] Definir endpoints públicos: `/api/auth/login`, `/api/usuarios/cadastro` (apenas se for primeiro)
+- [ ] Proteger todos os demais endpoints exigindo autenticação
+- [ ] Configurar CORS para permitir requisições do frontend
+- [ ] Desabilitar CSRF (usando JWT stateless)
+
+### Tarefas Frontend (React)
+
+**Componentes de Login:**
+
+- [ ] Criar view `views/Auth/Login.jsx` com formulário de login
+- [ ] Implementar campos: username e Senha
+- [ ] Adicionar checkbox "Lembrar-me" (opcional)
+- [ ] Mostrar mensagens de erro específicas retornadas pela API
+- [ ] Adicionar loading state durante autenticação
+- [ ] Redirecionar para Dashboard após login bem-sucedido
+
+**Gerenciamento de Token:**
+
+- [ ] Criar `authService.js` com métodos:
+  - `login(username, senha)` - chama API e armazena token
+  - `logout()` - remove token do storage
+  - `getToken()` - recupera token armazenado
+  - `isAuthenticated()` - verifica se há token válido
+  - `getUsuarioLogado()` - decodifica token e retorna dados do usuário
+- [ ] Armazenar token no `localStorage` ou `sessionStorage`
+- [ ] Adicionar token automaticamente em todas as requisições via interceptor do Axios
+
+**Context e Estado Global:**
+
+- [ ] Criar `AuthContext` com Provider para gerenciar estado de autenticação
+- [ ] Implementar hook `useAuth()` para acessar contexto
+- [ ] Armazenar: `usuario`, `token`, `isAuthenticated`, `login()`, `logout()`
+- [ ] Verificar token ao carregar aplicação e restaurar sessão se válido
+
+**Interceptor Axios:**
+
+- [ ] Criar interceptor de request para adicionar `Authorization: Bearer {token}` em todos os requests
+- [ ] Criar interceptor de response para capturar erro 401 (não autorizado)
+- [ ] Redirecionar para login ao receber 401 e limpar token expirado
+
+**Proteção de Rotas:**
+
+- [ ] Criar componente `ProtectedRoute` ou `PrivateRoute`
+- [ ] Verificar autenticação antes de renderizar rota protegida
+- [ ] Redirecionar para `/login` se não autenticado
+- [ ] Aplicar proteção em todas as rotas exceto login e cadastro
+
+---
+
+### US20: Controle de Sessão e Renovação de Token
+
+**Descrição:**
+
+Como usuário logado, quero que o sistema mantenha minha sessão ativa enquanto eu estiver usando a aplicação e me avise quando minha sessão estiver próxima de expirar, permitindo renovação sem perder meu trabalho.
+
+### Critérios de Aceite
+
+- O sistema deve detectar quando o token está próximo de expirar (últimos 30 minutos)
+- Um modal deve aparecer alertando o usuário com opções: "Renovar Sessão" ou "Fazer Logout"
+- Ao escolher "Renovar Sessão", um novo token deve ser gerado sem perder contexto
+- Após 8 horas de inatividade total, o usuário deve ser deslogado automaticamente
+- Ao detectar token expirado em qualquer requisição, redirecionar para login com mensagem apropriada
+
+### Tarefas Backend (Spring Boot)
+
+**Endpoint de Refresh:**
+
+- [ ] Criar endpoint `POST /api/auth/refresh` que:
+  - Valida token atual (mesmo que próximo da expiração)
+  - Extrai dados do usuário do token
+  - Gera novo token com validade renovada
+  - Retorna novo token no mesmo formato do login
+- [ ] Adicionar validação para garantir que token não esteja completamente expirado
+
+**Configuração:**
+
+- [ ] Definir janela de refresh (ex: aceitar tokens até 1 hora após expiração para renovação)
+- [ ] Adicionar log de renovações de token para auditoria
+
+### Tarefas Frontend (React)
+
+**Detecção de Expiração:**
+
+- [ ] Criar hook `useTokenExpiration()` que:
+  - Decodifica token e extrai data de expiração
+  - Calcula tempo restante
+  - Retorna `isExpiringSoon` (< 30 min) e `isExpired`
+- [ ] Implementar timer que verifica expiração a cada 1 minuto
+
+**Modal de Renovação:**
+
+- [ ] Criar componente `SessionExpirationModal.jsx`
+- [ ] Exibir countdown mostrando tempo restante
+- [ ] Implementar botão "Renovar Sessão" que chama `/api/auth/refresh`
+- [ ] Implementar botão "Sair" que faz logout
+- [ ] Ao renovar com sucesso, atualizar token no storage e context
+- [ ] Fechar modal automaticamente após renovação
+
+**Integração:**
+
+- [ ] Adicionar modal no componente raiz (App.jsx ou MainLayout.jsx)
+- [ ] Conectar com `useTokenExpiration` para controlar exibição
+- [ ] Atualizar interceptor Axios para usar refresh token em caso de 401
+
+---
